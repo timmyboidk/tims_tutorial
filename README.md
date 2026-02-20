@@ -20,16 +20,39 @@
 ### 运行步骤
 1. **克隆/下载本仓库**到你的本地电脑。
 2. 打开终端（Terminal / PowerShell），进入**项目的根目录**。
-3. 执行一键召唤命令（这会在后台自动拉取数据库环境并编译整个应用）：
+3. 执行一键召唤命令（这会在后台自动拉取环境并编译整个应用）：
    ```bash
-   docker-compose up -d --build
+   docker compose up -d --build
    ```
-4. **等待完毕后，在浏览器中打开：** [http://localhost:5173](http://localhost:5173) 即可进入沉浸式学习看板！
+4. **验证启动状态：**
+   执行 `docker compose ps` 确保所有容器状态为 `running`。如果某个容器 `Exit 1`，请执行 `docker compose logs [服务名]` 查看报错。
+5. **在浏览器中打开：** [http://localhost:5173](http://localhost:5173) 即可进入沉浸式学习看板！
+
+### ❓ 连不上 http://localhost:5173 怎么办？ (Troubleshooting)
+如果你在浏览器中看到“拒绝连接”，请尝试以下排查：
+
+1. **检查本地端口冲突**：
+   可能你本地已经启动了 `npm run dev` 占用了 5173 端口。
+   - 执行 `lsof -i :5173` (Mac/Linux) 或 `netstat -ano | findstr :5173` (Windows) 检查。
+   - 如果有冲突，请先关掉本地开发进程，或在 `docker-compose.yml` 中修改映射端口（例如 `"5174:80"`）。
+
+2. **尝试使用 127.0.0.1**：
+   有些系统的浏览器对 `localhost` 解析有差异，请尝试访问：[http://127.0.0.1:5173](http://127.0.0.1:5173)。
+
+3. **容器未完全启动**：
+   初次启动需要下载大量镜像。请查看日志确认 Express 服务已就绪：
+   ```bash
+   docker compose logs -f frontend
+   ```
+   看到 `Server is running statically on http://0.0.0.0:80` 即表示启动成功。
+
+### 📝 关于课程 1.2 代码重置
+如果你发现课程 1.2 已经有代码且无法删除，我已经将其 `startingCode` 清空。请尝试刷新页面或重新进入 IDE 视图，如果是 Docker 环境，请确保重新构建：`docker compose up -d --build`。
 
 ### 如何停止服务？
 当你学习完毕，想要释放电脑内存时：
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ---
