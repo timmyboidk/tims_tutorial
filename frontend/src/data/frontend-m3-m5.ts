@@ -6,80 +6,70 @@ export const frontendM3M5: Lesson[] = [
     title: '课程 3.1：Next.js SSR 处理视频详情页',
     category: '模块3：Next.js 与服务端渲染', track: '前端架构',
     moduleNumber: 3, lessonNumber: 1,
+    startingCode: '', targetCode: '',
     instructions: `# 使用 Server-Side Rendering (SSR) 处理 SEO
 
 ## 业务上下文
-在传统的 React SPA 中，初始加载的 HTML 不包含业务数据，这对搜索引擎抓取和社交媒体分享预览并不友好。
-
-通过 Next.js 的服务端渲染 (SSR)，可以在服务器端预先获取数据并生成完整的 HTML 返回给浏览器，提升首屏渲染速度并优化 SEO。
+在传统的 React Single Page Application (SPA) 架构中，初始加载下发的仅仅是一个绑定 \`<div id="root"></div>\` 的空置 HTML 文档与庞大 JS 核心包。这对于依赖于页面爬虫收录索引的公共访问内容（如视频详情页）是致命的，因为爬虫抓取到的将是不含有任何业务文本内容的骨架结构。
+引入 Next.js 体系提供的 Server-Side Rendering (SSR) 机制，可以在 Node.js 后台容器中预先发起远程数据获取，并在吐回给用户客户端的物理瞬间渲染拼装出自带强特征数据的完整源生 HTML，实现 Search Engine Optimization (SEO) 及首屏极速内容到达（FCP）。
 
 ![SSR Metadata Inject](/assets/ssr-metadata.png)
 
-## 代码解析
-
-### 1. 动态生成 Metadata
-使用 Next.js App Router 的 \`generateMetadata\` 钩子可以在服务端预获取数据并注入 \`title\`、\`description\` 和开放图谱 (OpenGraph) 标签。
+## 代码与配置解析
 
 \`\`\`typescript
 import type { Metadata } from 'next';
 import VideoPlayer from '@/components/VideoPlayer';
 
+// 1. 在服务端预执行生成针对性头标签与 OpenGraph (OG) 分享卡片
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const res = await fetch(\`http://localhost:8080/api/videos/\${params.id}\`);
   const video = await res.json();
   
   return {
-    title: \`\${video.title} - 视频展示平台\`,
+    title: \`\${video.title} - 高级架构实战教程\`,
     description: video.description,
     openGraph: { images: [video.thumbnail] }
   };
 }
-\`\`\`
 
-### 2. 构建服务端 React 组件 (Server Component)
-服务端组件支持 \`async/await\` 语法。它会在渲染阶段停顿以获取服务端数据，最终输出带有完整内容的 HTML。
-
-\`\`\`tsx
+// 2. React Server Component (服务端组件)，直接使用 async/await 堵塞语法抓取外部依赖
 export default async function VideoPage({ params }: { params: { id: string } }) {
   const res = await fetch(\`http://localhost:8080/api/videos/\${params.id}\`);
   const video = await res.json();
 
   return (
     <main className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{video.title}</h1>
+      <h1 className="text-2xl font-bold mb-4 border-b border-gray-200 pb-2 text-gray-900">{video.title}</h1>
+      {/* 复杂的嵌套渲染被留在云端推演完成 */}
       <VideoPlayer url={video.url} />
     </main>
   );
 }
 \`\`\`
 
-## 原理解析：SSR 生命周期与 Hydration
-**服务端预渲染**：
-Node 环境在接收到请求时，提前执行 React 渲染过程，输出静态 HTML 骨架。由于页面不再需要等待 JavaScript 全额解析完毕才展示数据，白屏时间（FCP）显著缩短。
-
-**注水 (Hydration)**：
-首屏加载完成后，客户端的 React 将开始执行，并在现有的纯静态 DOM 上挂载交互事件（如 \`onClick\`）。此时原本无交互的静态内容转变为动态应用。`
+## 底层原理深度剖析
+**SSR 生命周期编排与 Hydration (注水) 机制本质**：
+服务端预渲染（SSR）在 Node.js V8 引擎内部借助 \`ReactDOMServer.renderToString\` 类底层 API，提前解析所有的 \`React.createElement\` 结构体并输出纯文本格式的静态标注重组串。由于它跳过了在真机环境内的 JS 下载、JS 执行、DOM 节点计算注入的漫长周期，用户访问页面便可立竿见影地读出文字内容。
+但此时返回的长 HTML 仅仅是一张缺失神经链路响应交互点击的静态壁画。**Hydration (注水)** 就是伴随着其后置缓慢下载完成的客户端框架 JS Bundle 包体启动的第二次激活战役。React 此时并不会破坏这层已展示好的真实 DOM 节点树，而是像水一般悄无声息的流过所有 HTML 骨架，挂载关联好其附带着如 \`onClick\` 或 \`useState\` 逻辑绑定的合成事件引擎，将一张毫无生气的画作转换为真实交互的存活体系。`
   },
   {
     id: 'fe-3-2', type: 'frontend',
     title: '课程 3.2：React Server Components',
     category: '模块3：Next.js 与服务端渲染', track: '前端架构',
     moduleNumber: 3, lessonNumber: 2,
-    instructions: `# React Server Components 优化渲染性能
+    startingCode: '', targetCode: '',
+    instructions: `# React Server Components (RSC) 重构渲染流水线
 
 ## 业务上下文
-面临大型化的列表数据渲染（如大量评论）时，传统的 CSR (Client-Side Rendering) 会导致向客户端传输大量的 JSON 数据并在客户端层级发生繁重的渲染，容易造成性能瓶颈乃至内存溢出。
+面临大基数评论区此类复杂嵌套视图渲染时，如果走经典的 Client-Side Rendering (CSR) 流程，不仅需依靠微弱的客户端运算算力递归建树，这成百上千条的关联 JSON 文件传输更会急遽抬高带宽高限。\n运用 **React Server Components (RSC)** 可以颠覆性地将这批沉重的 JS 控制反转。让这套业务直接驻留在临近数据库的高性能数据中心网络机架上执行演算闭环，单向推流出绝对裁剪完工的组件片段给予最终消费者。
 
-利用 RSC (React Server Components)，你可以将复杂的组件计算完全放在服务端内完成。
-
-## 代码解析
-
-### 1. 缓存与 ISR (Incremental Static Regeneration)
-默认情况下，Next.js App Router 中的组件均作为 Server Component 运行。通过 \`fetch\` 设置 \`revalidate\` 时间，可以拦截高并发流量并直接利用在生命周期内所存续的 HTML 缓存。
+## 代码与配置解析
 
 \`\`\`typescript
 import React from 'react';
 
+// 限定只在服务节点进行内存组装装配
 interface Comment {
   id: string;
   userId: string;
@@ -88,27 +78,25 @@ interface Comment {
 }
 
 export default async function CommentsSection({ videoId }: { videoId: string }) {
+  // 利用 Fetch 劫持能力实现对高射频访问请求数据的拦截缓冲
+  // 60 秒内同一访问路径复用极速的 ISR (Incremental Static Regeneration) 缓存映射体
   const res = await fetch(\`http://api-service:8080/api/videos/\${videoId}/comments\`, {
     next: { revalidate: 60 } 
   });
   const comments: Comment[] = await res.json();
-\`\`\`
 
-### 2. 服务端视图组装
-将遍历与计算在服务端展开。
-
-\`\`\`tsx
   return (
     <section className="mt-8">
-      <h2 className="text-xl font-semibold mb-4 border-b pb-2">网友评论 ({comments.length})</h2>
+      <h2 className="text-xl font-semibold mb-4 border-b pb-2">技术探讨区 ({comments.length})</h2>
       <div className="space-y-4">
         {comments.map((c) => (
+          {/* 将格式化时间等复杂消耗统统卸载给超配制云服务器芯片核执行 */}
           <div key={c.id} className="p-4 bg-gray-50 rounded-lg">
             <div className="flex justify-between text-sm text-gray-500 mb-2">
-              <span>用户 {c.userId}</span>
+              <span>架构师 {c.userId}</span>
               <span>{new Date(c.createdAt).toLocaleDateString()}</span>
             </div>
-            <p className="text-gray-800">{c.content}</p>
+            <p className="text-gray-800 leading-relaxed">{c.content}</p>
           </div>
         ))}
       </div>
@@ -117,43 +105,37 @@ export default async function CommentsSection({ videoId }: { videoId: string }) 
 }
 \`\`\`
 
-## 原理：Server Components 体积零增加特性
-在过往架构中，引入繁重业务依赖库（例如重型的时间格式化或 Markdown 解析库）会极大影响下发至浏览器的 Bundle size。\nRSC 确保所涉及的特定服务端代码永远不被下传至客户端。因此组件无论在内部引入何种复杂依赖以达成生成目标，这部分体积对用户的加载代价始终为零。`
+## 底层原理深度剖析
+**RSC 对庞大前端 Bundle 架构的极限解耦与体积零增加（Zero-Bundle-Size）特性**：
+过往基于 CSR 模式下，即便是只需要做极少量的日期换算格式或者处理 Markdown 标记，也必须将 \`moment.js\` 或者 \`marked.js\` 这些几百 KB 的重型运算依赖强行塞给前端用户下载。
+RSC 的范式突破在于：它的作用域只存在于后端的执行堆。无论在服务端组件层顶引入了何等巨大的第三方转换计算库组件链条配置，在通过流线化机制（Streaming HTML/JSON payload）串行化向下文推送的成品产物中，绝对不会夹带一丝丝执行其过程依赖库本身的 JS 代码源——对该组件一切逻辑开辟的包加载负担对于移动端消费客户产生的增加消耗是实打实的 **0 Byte**。`
   },
   {
     id: 'fe-3-3', type: 'frontend',
-    title: '课程 3.3：独立架构与互动机制',
+    title: '课程 3.3：岛屿架构与乐观更新',
     category: '模块3：Next.js 与服务端渲染', track: '前端架构',
     moduleNumber: 3, lessonNumber: 3,
-    instructions: `# 利用独立架构结合乐观更新策略
+    startingCode: '', targetCode: '',
+    instructions: `# 岛屿架构 (Islands Architecture) 与客户端挂载机制
 
 ## 业务上下文
-在基于 Server Components 构筑好的静态内容中，必须加入动态交互（如点赞按钮、评论输入）。独立架构（Islands Architecture）允许开发者在静态渲染的 HTML 文档上穿插独立的互动组件区域。
+构建出全量静态的极速主骨架之后，为了响应点赞交互等需要具备实时通讯且携带重负载动态组件特性动作的组件区块时，必须依靠混合式分层的搭建原则。\n**岛屿架构** 的奥义就是将大片死亡静寂海洋般的 SSR 宏观模版中间，如同点缀星辰般地放置一处处能够脱离服务端环境运行，高度自激活并在运行时带有事件钩挂响应体的小型独立交互模块岛屿。
 
-## 代码解析
-
-### 1. 申明 Client Component
-\`'use client'\` 指令是一个界定声明，它告知打包系统该组件逻辑中包含类似于状态挂载 \`useState\` 或是浏览器事件绑定等客户端专属 API。它将被作为客户端侧 JavaScript 单独分发并在 Hydration 期间恢复交互能力。
+## 代码与配置解析
 
 \`\`\`tsx
+// 1. 核心指令：标识为 Client Component。脱离服务端渲染栈层而仅参与客户端的水化挂载与状态留存分拨
 'use client';
 
 import { useState } from 'react';
 
-interface LikeButtonProps {
-  videoId: string;
-  initialLikes: number;
-}
-\`\`\`
-
-### 2. Optimistic UI (乐观更新) 模式
-乐观更新模式指组件发送后端请求时，假定行为将总是成功并即刻反馈于视图层，而无需等待繁琐的网络验证结束，极大的削减了用户的交互体感延迟。
-
-\`\`\`tsx
-export function InteractiveLikeButton({ videoId, initialLikes }: LikeButtonProps) {
+export function InteractiveLikeButton({ videoId, initialLikes }: { videoId: string, initialLikes: number }) {
   const [likes, setLikes] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(false);
 
+  // 2. Optimistic UI (乐观预置响应)
+  // 当事件触发不等待那几百毫秒级别的远程微服务写入成功握手回应
+  // 系统抢先把预期理想呈现视图强制投放到本地浏览器画板层
   const handleLike = async () => {
     setIsLiked(!isLiked);
     setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
@@ -164,107 +146,105 @@ export function InteractiveLikeButton({ videoId, initialLikes }: LikeButtonProps
         headers: { Authorization: \`Bearer \${localStorage.getItem('jwt')}\` }
       });
     } catch (e) {
-      // 网络请求回撤回退机制
+      // 一旦异步长线校验崩绝或被阻击落库失败，利用 JS 事件循环执行后续异常捕捉实现对冲数据滚回撤销复原
       setIsLiked(isLiked);
       setLikes((prev) => (isLiked ? prev + 1 : prev - 1));
-      alert('操作失败');
+      alert('网络链路校验未经过通过，已进行视图安全平滑回滚');
     }
   };
 
   return (
     <button 
       onClick={handleLike}
-      className={\`font-bold py-2 px-6 rounded-full transition-transform active:scale-95 \${\n        isLiked ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'\n      }\`}
+      className={\`font-bold py-2 px-6 rounded-full transition-transform active:scale-95 \${\n        isLiked ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'\n      }\`}
     >
-      {isLiked ? '已赞' : '点赞'} {likes.toLocaleString()}
+      {isLiked ? '体系已采录' : '启动点赞追踪'} {likes.toLocaleString()}
     </button>
   );
 }
 \`\`\`
 
-## 架构准则
-在 Next.js 的服务端客户端渲染生态中，请遵循基本定律：**服务端组件能引入客户端组件作为末端，但客户端组件严禁载入不含客户端声明的服务端组件。** 这也是由于服务端环境资源隔离的原因。`
+## 底层原理深度剖析
+**作用域强制隔离矩阵特性**：
+Next.js 使用一套非常规的树枝依赖边界切割协议约束层结构。在服务端组件树 (Server Tree) 中允许像组装叶子一般接点套入 \`'use client'\` 客户端独立隔离组件分支。在此边界节点向外衍生的一切代码将被脱离主框架服务器编译执行线，连缀成为要打包发送至网关浏览器侧单独推演执行的 Client Bundle 集集。
+但在此机制准则下存在不可触犯的逆流铁律：**客户端组件代码段内绝对禁止 \`import\` 导入带有未标记的 Server 组件体。** 任何试图强行在具备交互闭包或者全局状态存蓄功能的组件之中嵌套服务器私有计算类的行为操作，都会引致编译沙箱判定出系统极度失序且资源泄漏，而发生致命解压降级熔断。`
   },
   {
     id: 'fe-4-1', type: 'frontend',
     title: '课程 4.1：构建看板布局',
     category: '模块4：SaaS 洞察看板', track: '前端架构',
     moduleNumber: 4, lessonNumber: 1,
+    startingCode: '', targetCode: '',
     instructions: `# 掌握 CSS Grid 定位技巧构建大屏体系
 
 ## 业务上下文
-构建数据展示型的统一监控台界面是复杂管理系统的核心工作之一。二维网页格系统通常选用 **CSS Grid** 而不仅依靠一维流式的 flexbox 进行整体框架层支撑。
+企业级 SaaS 产品后台最引人瞩目的大规模数据统计中控面板，其布局并非是一维流水化陈列元素的粗制累积可以承受的。由于面临极密度的核心 KPI 数据方块与多元折线表盘排布，采用 **CSS Grid 网格系统** 建立多维度、双通道且带有极强轨道区域限制定位能效的展示骨架体系是业界唯一的严谨实施标准规范。
 
-## 代码排版逻辑
-
-### 1. KPI 状态原子组件：StatCard
-抽象底层状态面板展示信息作为公共原子组件。使用通用属性封装数值表现与外在 UI 模型。
+## 代码与配置解析
 
 \`\`\`tsx
 import React from 'react';
 
+// 1. 无状态组件抽离与属性类型防篡改封闭设限
 interface StatProps {
-  title: string;
-  value: number | string;
-  trend: number;
-  info: string;
+  title: string; value: number | string; trend: number; info: string;
 }
 
 const StatCard = ({ title, value, trend, info }: StatProps) => (
+  // 原子展示单元维持高内聚内部流性及边缘阴影层遮照设计
   <div className="bg-white rounded-xl border border-gray-100 p-6 flex flex-col shadow-sm relative overflow-hidden">
     <h3 className="text-gray-500 text-sm font-medium mb-1">{title}</h3>
-    <div className="text-3xl font-extrabold text-[#202124]">{value}</div>
+    <div className="text-3xl font-extrabold text-gray-900">{value}</div>
     
     <div className="mt-4 flex items-center justify-between">
       <span className={\`text-xs font-bold \${trend > 0 ? 'text-green-500' : 'text-red-500'}\`}>
-        {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}% 从上周
+        {trend > 0 ? '↗' : '↘'} {Math.abs(trend)}% 相较基线期
       </span>
       <span className="text-xs text-gray-400">{info}</span>
     </div>
-    
-    <div className="absolute top-0 right-0 -mt-4 -mr-4 w-16 h-16 bg-blue-500 opacity-5 rounded-full blur-2xl"></div>
   </div>
 );
-\`\`\`
 
-### 2. 构建核心 CSS Grid 网格骨架
-**\`grid-cols-1 md:grid-cols-2 xl:grid-cols-4\`** 这是经典的 Mobile First （移动端优先）自适应定义原则：在窄屏下表现为 1 排跨度，触达 \`md\` 宽度尺寸界限时排开为并列的对称 2 列，最终向宽大荧幕扩张成为满额包含 4 槽并行体系的呈现态。
-
-\`\`\`tsx
+// 2. 利用 Tailwind 体系调度搭建全局性多设备分辨率弹性断点格架矩阵网
 export default function DashboardGrid() {
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">数据中心</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-8 border-b border-gray-200 pb-4">系统观测塔台</h1>
       
+      {/* 
+        利用 grid-cols-* 指令建立响应式轨道防撞排布边界锁护系统：
+        - 基础屏幕（移动级尺寸）：降维打击全屏铺平，每行挤占全部轨道 1 格展示。
+        - 中等屏幕（md 基线阈值）：拓充双线轨道矩阵切割等额阵列表。
+        - 终极带鱼宽屏（xl 基核之上）：展开完整体系为四大巨型核心矩阵 4 级。
+      */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard title="日均流量数" value="2,405,119" trend={12.5} info="过去24小时" />
-        <StatCard title="缓存利用率" value="98.2%" trend={0.4} info="缓存缺失率较低" />
-        <StatCard title="新增账号数" value="14,233" trend={-2.1} info="包含部分社交登录" />
-        <StatCard title="系统异常" value="0" trend={0} info="运转正常" />
+        <StatCard title="日均 QPS 洪峰" value="2,405,119" trend={12.5} info="监控过去 24h 峰点" />
+        <StatCard title="分布式缓存覆盖击命中" value="98.2%" trend={0.4} info="底层 DB 零穿刺漏穿率" />
+        <StatCard title="并发连接承载终端" value="14,233" trend={-2.1} info="维持长连接存活态" />
+        <StatCard title="故障节点集群剥离数" value="0" trend={0} info="环境稳如磐石" />
       </div>
     </div>
   );
 }
 \`\`\`
 
-## 原理概括
-借助 \`display: grid\` 所声明建立的原生二维空间框架内，排版系统会生成具有轨道定位并自带内部隔离空间 BFC (Block Formatting Context) 特性的格子从而极大限度防止外部元素的溢出挤压崩溃连锁反应现象产生。`
+## 底层原理深度剖析
+**网格边界 BFC (Block Formatting Context) 层架构稳定性**：
+一维 \`flex\` 系统以内部主轴元素挤压空间作为对齐标尺，它的高度流动性会使得复杂多元素内嵌套如果遇到异常变体内容输入尺寸激增极容易冲出界限将原本其它并列表单直接“撑破”甚至跨行挤出可视窗口引发现象级别的重排错乱（Reflow Bug）。而通过 \`display: grid\` 所宣告构建出空间是一种高刚性的坐标体系框架，框架外壳犹如钢筋模板设定了单元体长宽极限界线。当内生文本或嵌入体暴涨时它也会在自我 BFC 墙壁内实施阶段性隐藏（Overflow:hidden）与文字打散切断动作，以此死保整个大图模块版式不崩防，达到对界外完全毫无影响及牵涉波及的隔离维稳作用。`
   },
   {
     id: 'fe-4-2', type: 'frontend',
     title: '课程 4.2：可视化实时数据',
     category: '模块4：SaaS 洞察看板', track: '前端架构',
     moduleNumber: 4, lessonNumber: 2,
-    instructions: `# 构建基础 SVG 图表基元
+    startingCode: '', targetCode: '',
+    instructions: `# 规避过度依赖：构建原生 SVG 可视化映射
 
 ## 业务上下文
-在应对体量微弱但视觉需求强烈的实时数据线谱（Sparklines）展现阶段时，过度引入超大体量图形算法依赖如 ECharts，极易增添工程额外编译负担。
-通过使用具备轻量原生特性的 **SVG** (可缩放矢量图形) 等基础数学工具与组件集成化结合便能有效满足数据直观反应效果。
+工程实践中时常会遇到仅需要呈现微型内嵌趋势线谱 (Sparklines) 等极其简明轻量的图形化视图数据需求。若是盲目为这么一小段展示强行牵扯加载 \`ECharts\` 或 \`D3.js\` 等动辄逼近 1MB 量级的非编译型巨石庞然大物库全集，会造成惊恐的首屏性能严重损毁惩戒以及极其过度的代码依赖膨胀。
+转而发掘使用底层 Web 标准规范中的 SVG (Scalable Vector Graphics) 解析工具系统构建自有的一套转换映射图元指令，能将复杂结构体系进行绝对降维。
 
-## 代码解析
-
-### 1. 业务坐标尺寸收缩推导
-核心逻辑是对收束范围内的极差进行百分比转化投射：采集数组内最高下限基线获取对应值在 Y 轴像素尺度的占有率。
+## 代码与配置解析
 
 \`\`\`tsx
 import React from 'react';
@@ -274,169 +254,174 @@ interface LineChartProps {
   color?: string;
 }
 
-export function Sparkline({ data, color = '#4285F4' }: LineChartProps) {
+export function Sparkline({ data, color = '#2563eb' }: LineChartProps) {
   if (data.length === 0) return null;
 
+  // 1. 基点极差计算矩阵
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
 
+  // 虚拟展示画布容器界定物理限制墙壁阈值
   const height = 40;
   const width = 100;
-\`\`\`
 
-### 2. SVG 原生 Path 指令字符串生成
-在 SVG 内建立矢量坐标描述路径依靠 \`M\` (Move To, 直向移动起点)，以及连线节点指令 \`L\` (Line To, 指定划线抵达位置)。配合 Array 函数即可轻松实现。
-
-\`\`\`tsx
+  // 2. 数学收敛投射转换成指令文本链：提取真实数据中的离散信号组 
+  // 将极差值以归一化转换算率按比例映射降压锁定落到 100x40 的物理展示屏幕二维点区内
   const points = data
     .map((val, i) => {
       const x = (i / (data.length - 1)) * width;
-      const y = height - ((val - min) / range) * height;
+      const y = height - ((val - min) / range) * height; // 浏览器 SVG 绘图系 Y 轴向下递增法则
       return \`\${x},\${y}\`;
     })
-    .join(' L ');
+    .join(' L '); // L（LineTo）挂钩绘制绝对路径游标连线
 
   return (
-    <svg viewBox={\`0 0 \${width} \${height}\`} className="w-full h-10 overflow-visible">
+    // viewBox 提供了内聚相对维度的完美弹性比例框架以避免失真的产生
+    <svg viewBox={\`0 0 \${width} \${height}\`} className="w-full h-10 overflow-visible mt-4">
       <path
+        // M (Move To 起始移送起点触点笔触发位置)
         d={\`M \${points}\`}
         fill="none"
         stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="drop-shadow-sm transition-all"
+        strokeWidth="2.5"
+        strokeLinecap="round" // 将线条末端截断点通过几何包裹修饰为优美弧角接头
+        strokeLinejoin="round" 
+        className="drop-shadow-sm"
       />
     </svg>
   );
 }
-\`\`\``
+\`\`\`
+
+## 底层原理深度剖析
+**SVG 声明式坐标体系的超维无损拉伸引擎**：
+我们常见的 \`.jpg\` 与 \`.png\` 图片在本质上是在二维栅格空间里按固定行与列填充每一个微粒色块（Pixel）生成的位图。当对其实行屏幕缩放等超维放大物理变距动作时其就会立即引发周围色彩色差补足马赛克污染发糊。
+而在 SVG 内部所有展示效果都是一组以类 XML 作为封皮承载框架描述的无极化几何算法路径文本体本身。这种纯代数方程式组态不仅可以在 React 框架里如组件一般接受入参变量（如颜色、路径），并且在遇到任意 4K/8K 设备超高清极限尺寸屏幕延展被强行放大的时机背景下也是经过图形处理器内核通过再次进行数学重新矢量计算渲染出最精绝的全新像素体图点。做到全视无界，内存消耗恒定，绝对不会产生失真现象。`
   },
   {
     id: 'fe-5-1', type: 'frontend',
     title: '课程 5.1：引入 Axios 拦截器',
-    category: '模块5：集成与发布', track: '前端架构',
+    category: '模块5：微前端网关与安全拦截', track: '前端架构',
     moduleNumber: 5, lessonNumber: 1,
-    instructions: `# 建立请求管理代理基准
+    startingCode: '', targetCode: '',
+    instructions: `# 构建健壮可控的 Axios 全面拦截关隘
 
 ## 业务上下文
-面对多组件间对于需要请求校验后端 API 的重复鉴权调用开销，以及由于超时状态而诱发的大规模重构隐忧。
-统一为底层的发送与传出执行设定统一出海防范规则 —— **Axios 拦截器** 是必争的框架最佳实践节点。
+大型化单页组件系统通常拥散落各地多达两三百个用于对各类远程微服务通信获取的 API 接口函数。若让每一个离散方法独立自身担负向其中写入并解包鉴权请求头（例如植入 \`Bearer Token\` 的校验环节）、排查甄别响应网络 401 错乱回流执行身份被重置重登陆等等海量极其累赘琐碎重复的业务关联判定行为。此乃最高危级别的工程混乱代码腐化之源（Code Smell）。
+通过搭建提取至顶层路由环境前哨关卡执行监听和篡改预先操作的 **Axios Interceptors 拦截网系统** 可以执行针对此所有网络交互生命期的绝对霸权把控管理中心能力闭合。
 
-## 代码部署体系
-
-### 1. 底层拦截全局实例化
-锚定所有的通用前置配置。
+## 代码与配置解析
 
 \`\`\`typescript
 import axios from 'axios';
 
+// 1. 基干层实例切割化封装
 export const apiClient = axios.create({
   baseURL: '/api',
-  timeout: 5000,
+  timeout: 8000, // 为保障高延迟网络不长时间锁死资源而触发超载熔断截点降落时间限制
 });
-\`\`\`
 
-### 2. Request 控制流处理
-请求发出时的回调会拦截住本次 \`config\` 参数并为所有网络事务载入规范鉴权内容头标（如 OAuth 标准内的 Header Authorization）。
-
-\`\`\`typescript
-apiclient.interceptors.request.use(
+// 2. HTTP Request 发射出境关口安检层：为所有的裸求包裹注入并施加环境必须携带信息层级装甲
+apiClient.interceptors.request.use(
   (config) => {
+    // 跨域穿透凭证自备组装
     const token = localStorage.getItem('jwt');
     if (token) {
       config.headers['Authorization'] = \`Bearer \${token}\`;
     }
+    // 务必返回重组改制体完成握手，否则 Promise 等待链将进入无穷死循挂架空窗
     return config;
   },
   (error) => Promise.reject(error)
 );
-\`\`\`
 
-### 3. Response 接收回访管理层
-进行静默的数据过滤拦截，若接受由后端服务器发还的不具备鉴权通行权限抛转信号（401 Unauthorized）。强制执行登出并执行本地凭证注销及定向刷新。
-
-\`\`\`typescript
-apiclient.interceptors.response.use(
+// 3. HTTP Response 反扑接收反击安审层：从数据包上获取执行判定状态识别剔除及跳转重路由统帅调度指令
+apiClient.interceptors.response.use(
   (response) => response, 
   (error) => {
     if (error.response?.status === 401) {
-      console.error('鉴权失效，重新引导登录');
+      console.warn('捕获非法授权异常状态边界响应触发，施行即刻状态凭证清盘并降阶安全引流重定向执行流程');
+      // 切断过时死角伪身状态关联链接源
       localStorage.removeItem('jwt');
       window.location.href = '/login';
     }
+    // 全数暴露并继续层级反击上抛异常供最终组件展示层面实现友好接应拦截化解释错误状态展示
     return Promise.reject(error);
   }
 );
 \`\`\`
 
-## 架构原则分析：Promise Pipeline
-拦截器体系实为一种多层次的级联回调阵列（\`promise.then(chain[x], chain[x+1])\`）。这也是为什么在每个钩子的末尾必须存在有效状态如 \`return config\` 或是上抛拦截返回处理，否则流水线调用将出现中断死循环。`
+## 底层原理深度剖析
+**承诺队列链 (Promise Pipeline) 与事件控制循环生命期挂扣**：
+Ajax 的发展演进是由原生繁复杂错纠缠不清的 \`XMLHttpRequest(XHR)\` 过步进化升级拥抱纯异步调配执行架构 Promise 管理模型的进化演变。而在 Axios 高屋建瓴的事件包装设计思路内部执行中拦截阵列器体系质上被架构被转化为包含一系列首尾环系环环相接的流水线串联长函数组群链条：\`Promise.resolve(config).then(requestInterceptor).then(dispatchXHR).then(responseInterceptor)\`。
+在这种流动的隧道传输模型中每一截拦截站层在内部接收并做完操作完自身任务时，一旦漏未加上 \`return\` 以往外翻手推出其被持有的最新报文封包或者用 \`Promise.reject\` 打断进程反馈等措施举措将致使这个包裹如抛入太空黑体再也没有出站动作结果，前端组件发出指令悬置化死死被按压等待挂死进入空转毁灭死域。这成为诸多拦截器翻车异常最大的血泪大坑点源泉。`
   },
   {
     id: 'fe-5-2', type: 'frontend',
     title: '课程 5.2：实战集成与安全探讨',
-    category: '模块5：集成与发布', track: '前端架构',
+    category: '模块5：微前端网关与安全拦截', track: '前端架构',
     moduleNumber: 5, lessonNumber: 2,
-    instructions: `# 功能的集成连接与后端实战交融
+    startingCode: '', targetCode: '',
+    instructions: `# 请求隔离应用终端交融聚合系统实战演练
 
 ## 业务上下文
-这里进行最终底层认证接口通信模拟的整体交互应用。
+最后冲刺的业务将完全仰仗着前面所有构建筑完成的地基：高度集成融合并抽空了全部烦琐环境处理逻辑的网络终端实例系统，进行仅专注于主业务干线本身逻辑纯粹的联调数据贯通调用工作战线展示。从而揭露及验证一个健壮、无需担心状态安全遗祸及高度干净清爽的可调用 API 应用接口结构在端应用侧如何完成使用组建挂钩操作展示过程并进行深入隐秘隐患挖掘探讨。
 
-## 联调代码结构
-
-### 1. 发起真实登录认证模拟
-向指定业务通信的服务器节点发送核心校验凭证，对获取传回数据妥善处置保护于应用域层：
+## 代码与配置解析
 
 \`\`\`tsx
 import React, { useState } from 'react';
 import { apiClient } from './apiClient';
 
-export default function AuthGate() {
+export default function SecuritySandbox() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('jwt'));
-  const [profile, setProfile] = useState<any>(null);
+  const [securedData, setSecuredData] = useState<any>(null);
 
-  const handleLogin = async () => {
+  // 1. 发起源网端点校验核对授权登入身份：完成基石奠定层操作
+  const handleAuthExchange = async () => {
     try {
+      // 摒弃了所有的 try catch 对状态代码的多余杂项干预以及 ContentType 预埋等等冗复劳动量工作
       const res = await apiClient.post('/auth/login', { username: 'admin', password: 'password' });
       
-      const newToken = res.data.token;
-      localStorage.setItem('jwt', newToken);
-      setToken(newToken);
+      const sessionSeal = res.data.token;
+      localStorage.setItem('jwt', sessionSeal);
+      setToken(sessionSeal);
     } catch (err) {
-      alert('服务请求错误或者配置不完整');
+      alert('连接被后台系统环境网关硬生核销拒捕截断.');
     }
   };
-\`\`\`
 
-### 2. 纯粹化的后续 API 通信
-这部分的组件只需要明确自己拉取内容的所需地址。繁细的携带 JWT 和失败跳转已经在外部被前述拦截器完全吸收掌控：
-
-\`\`\`tsx
-  const fetchSecretProfile = async () => {
+  // 2. 将核心权限被深度护墙阻隔数据体系实行越权式提取展现使用端测试层功能
+  const pullSensitiveAssets = async () => {
     try {
+      // 没有任何参数传递干扰以及显性声明请求拦截头部设定内容介入打断本身数据获取动作结构纯洁度呈现性构建
       const res = await apiClient.get('/users/profile');
-      setProfile(res.data);
+      setSecuredData(res.data);
     } catch (err) {
-      // 外部重定向已经处理错误
+      // 这里只需要负责在控制层留足应对失败异常兜底操作余地，所有的身份销毁刷新拦截重写转引重试体系已于隐秘拦截拦截网中全部自动运转完毕完成终结执行操作闭环无需干预分神分化。
+      console.log('数据流被击溃并由前线代理指挥阵拦截吸收')
     }
   };
 
   return (
-    <div className="p-10 text-center">
+    <div className="p-10 border rounded shadow bg-white max-w-lg mx-auto mt-10">
       {!token ? (
-        <button onClick={handleLogin} className="bg-blue-500 text-white px-8 py-3 rounded-full font-bold shadow">
-          系统请求接驳
+        <button onClick={handleAuthExchange} className="bg-gray-800 text-white w-full py-4 rounded-lg font-bold">
+          颁发密钥授权建立核心链接区
         </button>
       ) : (
         <div className="space-y-4">
-          <p className="text-green-600 font-bold">Token 保存有效状态中</p>
-          <button onClick={fetchSecretProfile} className="bg-blue-600 text-white px-6 py-2 rounded shadow">
-            抓取后端被保护状态内容
+          <div className="bg-green-50 text-green-700 p-3 rounded border border-green-200 text-sm font-medium">授权通行环路系统连贯稳定在线运转中...</div>
+          <button onClick={pullSensitiveAssets} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition">
+            窃取展示保护层内部隐私数据内容展现
           </button>
           
-          {profile && <pre className="text-left bg-gray-100 p-4 mt-4 text-xs overflow-auto">{JSON.stringify(profile, null, 2)}</pre>}
+          {securedData && (
+            <pre className="text-left bg-gray-900 text-gray-100 p-4 mt-4 text-xs overflow-auto rounded-lg rounded-t-none border-t-4 border-blue-500">
+               {JSON.stringify(securedData, null, 2)}
+            </pre>
+          )}
         </div>
       )}
     </div>
@@ -444,7 +429,10 @@ export default function AuthGate() {
 }
 \`\`\`
 
-## 探讨
-需要注意的是，存放授权信息（诸如 JWT Token）于前端直接解析的 \`localStorage\` 中是具备被外界脚本（Cross Site Scripting XSS）非法执行夺取其全部内容的隐患和直接风险的。在严紧的安全系统中，常利用设置不可操作标签如 \`HttpOnly\` 属性的高阶 Http Cookie 数据交换等方式隔离拦截越权探针，这也是构建前端高级边界安全不可缺失的部分。`
+## 底层原理深度剖析
+**跨站执行剧本恶意入侵截断 (XSS Attack) 防卫隐患安全模型基底结构剖解**：
+我们当下一直于课程演练之中把 JWT 的授权凭单文本通过直接赋值的存储方式安置在普通易操作读取触控获取的 API 接口即刻调用读取暴露点：\`localStorage\` 里存储。
+这是前端应用生态圈一个被大面积滥用于基础原型和图纸层设计实现期内的粗陋安全短板重大漏洞结构问题。虽然这种开发使用操作便捷门禁极粗：但这由于可以非常轻易被直接注入 \`window.localStorage.getItem\` 即可将所有敏感密钥文本给瞬间夺取全收抽调导出外域去往执行恶意截持攻击。而在防守更周密森严高级化架构成熟金融及政务大型防线体系阵型部署生产生态应用系统环节领域内部。这个通关权限门票都会强制转移依赖放入被加上了极为特殊限制声明特质的 \`HttpOnly Cookie\` 隧道中进行运输潜行保护传递操作隐没隐藏遮蔽拦截隐藏处理操作！
+加上此标记等同于给前端在内部环境切除切断了浏览器自身对于其任何的 JS 操作权限操作能力，将读取该密钥内容的职权彻底让渡单发给网络发出动作通信拦截请求。做到：只被带着通信却绝不可能在应用环境体系被读取出的不可见的极致数据物理空间隐蔽安全性防护护栏壁垒拦截机制结构部署。`
   }
 ];
