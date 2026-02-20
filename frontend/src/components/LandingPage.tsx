@@ -17,11 +17,11 @@ export default function LandingPage({ onSelectLesson }: LandingPageProps) {
                     const { svg } = await mermaid.render(
                         id,
                         `graph TD
-    Client["📱 Frontend (React / Next.js)"]
-    API["⚡ Spring Boot REST API"]
-    Redis[("🚀 Redis (Cache & Session)")]
-    Kafka{"📨 Kafka (Event Bus) DLQ"}
-    DB[("🗄️ MySQL (Persistent Storage)")]
+    Client["Frontend (React / Next.js)"]
+    API["Spring Boot REST API"]
+    Redis[("Redis (Cache & Session)")]
+    Kafka{"Kafka (Event Bus) DLQ"}
+    DB[("MySQL (Persistent Storage)")]
     
     Client -- "1. Login / Fetch Feed" --> API
     Client -- "2. Like Video" --> API
@@ -63,7 +63,7 @@ export default function LandingPage({ onSelectLesson }: LandingPageProps) {
                 </div>
 
                 {/* Roadmap Grid */}
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">🚀 实战闯关地图 (Roadmap)</h2>
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">实战闯关地图 (Roadmap)</h2>
                 <div className="space-y-8 pb-12">
                     {categories.map((category) => {
                         const catLessons = lessons.filter((l) => l.category === category);
