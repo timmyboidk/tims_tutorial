@@ -25,10 +25,10 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 # 拷贝 Express 的核心支撑文件和依赖
 COPY package.json package-lock.json ./
-RUN npm install --production
+RUN npm install --omit=dev
 
 # 拷贝后端代码层
-COPY server.js ./
+COPY server.ts ./
 COPY api ./api
 
 # (由于取消了 Nginx，需要移除 nginx.conf 的相关拷贝)
@@ -37,4 +37,4 @@ COPY api ./api
 EXPOSE 80
 
 # 💡 启动 Express 服务
-CMD ["node", "server.js"]
+CMD ["npx", "tsx", "server.ts"]
