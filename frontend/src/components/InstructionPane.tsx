@@ -12,25 +12,17 @@ import type { Lesson } from '../types';
 
 interface InstructionPaneProps {
     lesson: Lesson;
-    confirmedChars: number;
-    totalChars: number;
 }
 
 export default function InstructionPane({
     lesson,
-    confirmedChars,
-    totalChars,
 }: InstructionPaneProps) {
-    const progress = totalChars > 0 ? confirmedChars / totalChars : 0;
 
-    const completedSteps = useMemo(() => {
-        if (!lesson.diagramMarkup) return 0;
-        return Math.min(7, Math.floor(progress * 8));
-    }, [progress, lesson.diagramMarkup]);
+    // Removed dynamic progress, diagram stays static
+    const completedSteps = 7;
 
-    const confirmedCode = useMemo(() => {
-        return lesson.targetCode.substring(0, confirmedChars);
-    }, [lesson.targetCode, confirmedChars]);
+    // Pass target code to live preview instead of partially confirmed code
+    const confirmedCode = lesson.targetCode;
 
     return (
         <div className="h-full flex flex-col overflow-hidden bg-white">
@@ -44,18 +36,6 @@ export default function InstructionPane({
                         {lesson.type === 'frontend' ? '前端' : '后端'}
                     </span>
                     <h2 className="text-lg font-semibold text-[#202124]">{lesson.title}</h2>
-                </div>
-                {/* Progress indicator */}
-                <div className="mt-4 flex items-center gap-3">
-                    <div className="flex-1 h-1.5 rounded-full bg-[#E8EAED] overflow-hidden">
-                        <div
-                            className="h-full rounded-full bg-[#4285F4] transition-all duration-300"
-                            style={{ width: `${progress * 100}%` }}
-                        />
-                    </div>
-                    <span className="text-xs text-[#80868B] font-mono tabular-nums">
-                        {Math.round(progress * 100)}%
-                    </span>
                 </div>
             </div>
 

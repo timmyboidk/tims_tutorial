@@ -1,14 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import mermaid from 'mermaid';
 import { lessons } from '../data/lessons';
-import type { LessonProgress } from '../types';
 
 interface LandingPageProps {
     onSelectLesson: (id: string) => void;
-    progressMap: Record<string, LessonProgress>;
 }
 
-export default function LandingPage({ onSelectLesson, progressMap }: LandingPageProps) {
+export default function LandingPage({ onSelectLesson }: LandingPageProps) {
     const mermaidRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -74,10 +72,6 @@ export default function LandingPage({ onSelectLesson, progressMap }: LandingPage
                                 <h3 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">{category}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {catLessons.map((lesson) => {
-                                        const progress = progressMap[lesson.id];
-                                        const isCompleted = progress?.completed;
-                                        const pct = progress?.totalChars ? Math.round((progress.confirmedChars / progress.totalChars) * 100) : 0;
-
                                         return (
                                             <div
                                                 key={lesson.id}
@@ -89,22 +83,10 @@ export default function LandingPage({ onSelectLesson, progressMap }: LandingPage
                                                         <span className={`text-xs font-bold px-2 py-1 rounded ${lesson.type === 'frontend' ? 'bg-[#E8F0FE] text-[#1967D2]' : 'bg-[#E6F4EA] text-[#137333]'}`}>
                                                             {lesson.type === 'frontend' ? '前端' : '后端'}
                                                         </span>
-                                                        {isCompleted && <span className="text-[#34A853] font-bold text-sm">✓ 已完成</span>}
                                                     </div>
                                                     <h4 className="font-semibold text-gray-800 group-hover:text-[#4285F4] transition-colors line-clamp-2">
                                                         {lesson.title}
                                                     </h4>
-                                                </div>
-
-                                                {/* Progress Bar */}
-                                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                                        <span>进度</span>
-                                                        <span>{pct}%</span>
-                                                    </div>
-                                                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-[#4285F4] rounded-full transition-all" style={{ width: `${pct}%` }} />
-                                                    </div>
                                                 </div>
                                             </div>
                                         );

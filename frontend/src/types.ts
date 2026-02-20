@@ -37,14 +37,3 @@ export interface Lesson {
     /** Inline annotations from the instructor */
     comments: InstructorComment[];
 }
-
-/** Tracks how far the user has progressed in a lesson */
-export interface LessonProgress {
-    lessonId: string;
-    /** Number of correctly typed characters */
-    confirmedChars: number;
-    /** Total characters in targetCode */
-    totalChars: number;
-    /** Whether the lesson is fully complete */
-    completed: boolean;
-}

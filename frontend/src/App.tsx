@@ -6,7 +6,6 @@ import InstructionPane from './components/InstructionPane';
 import GhostEditor from './components/GhostEditor';
 import LandingPage from './components/LandingPage';
 import { lessons } from './data/lessons';
-import type { LessonProgress } from './types';
 
 /* ================================================================
  * App — Root component composing the split-pane layout:
@@ -17,57 +16,34 @@ export default function App() {
     const [currentView, setCurrentView] = useState<'landing' | 'ide'>('landing');
     const [activeLessonId, setActiveLessonId] = useState(lessons[0].id);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [progressMap, setProgressMap] = useState<Record<string, LessonProgress>>(() => {
-        const map: Record<string, LessonProgress> = {};
-        for (const lesson of lessons) {
-            map[lesson.id] = {
-                lessonId: lesson.id,
-                confirmedChars: 0,
-                totalChars: lesson.targetCode.length,
-                completed: false,
-            };
-        }
-        return map;
-    });
+
+    // codeCache: maps lessonId -> cached code string
+    const [codeCache, setCodeCache] = useState<Record<string, string>>({});
 
     const activeLesson = lessons.find((l) => l.id === activeLessonId) || lessons[0];
-    const activeProgress = progressMap[activeLesson.id];
 
     // Load persisted progress on mount
     useEffect(() => {
         fetch('/api/progress')
             .then(res => res.json())
             .then(data => {
-                if (data.success && data.completedLessons) {
-                    setProgressMap(prev => {
-                        const newMap = { ...prev };
-                        for (const lessonId of data.completedLessons) {
-                            if (newMap[lessonId]) {
-                                newMap[lessonId] = {
-                                    ...newMap[lessonId],
-                                    confirmedChars: newMap[lessonId].totalChars,
-                                    completed: true
-                                };
-                            }
-                        }
-                        return newMap;
+                if (data.success && data.records) {
+                    const newCache: Record<string, string> = {};
+                    data.records.forEach((r: { lessonId: string, code: string }) => {
+                        newCache[r.lessonId] = r.code;
                     });
+                    setCodeCache(newCache);
                 }
             })
-            .catch(err => console.error('Failed to fetch progress:', err));
+            .catch(err => console.error('Failed to fetch progress cache:', err));
     }, []);
 
-    /** Update progress for the active lesson */
-    const handleProgress = useCallback(
-        (confirmed: number, total: number) => {
-            setProgressMap((prev) => ({
+    /** Update cached code for the active lesson */
+    const handleCodeChange = useCallback(
+        (code: string) => {
+            setCodeCache((prev) => ({
                 ...prev,
-                [activeLesson.id]: {
-                    lessonId: activeLesson.id,
-                    confirmedChars: confirmed,
-                    totalChars: total,
-                    completed: confirmed >= total,
-                },
+                [activeLesson.id]: code,
             }));
         },
         [activeLesson.id]
@@ -80,8 +56,6 @@ export default function App() {
                     {/* Top bar */}
                     <Header
                         lessonTitle={activeLesson.title}
-                        confirmedChars={activeProgress?.confirmedChars ?? 0}
-                        totalChars={activeProgress?.totalChars ?? 0}
                         onBackToRoadmap={() => setCurrentView('landing')}
                     />
 
@@ -90,7 +64,6 @@ export default function App() {
                         {/* Lesson navigation sidebar */}
                         <LessonSidebar
                             lessons={lessons}
-                            progressMap={progressMap}
                             activeLessonId={activeLessonId}
                             onSelectLesson={setActiveLessonId}
                             collapsed={sidebarCollapsed}
@@ -111,8 +84,6 @@ export default function App() {
                             {/* Left pane: Instructions / Diagrams / Preview */}
                             <InstructionPane
                                 lesson={activeLesson}
-                                confirmedChars={activeProgress?.confirmedChars ?? 0}
-                                totalChars={activeProgress?.totalChars ?? 0}
                             />
 
                             {/* Right pane: Ghost Text Editor */}
@@ -120,7 +91,8 @@ export default function App() {
                                 <GhostEditor
                                     key={activeLesson.id}
                                     lesson={activeLesson}
-                                    onProgress={handleProgress}
+                                    cachedCode={codeCache[activeLesson.id]}
+                                    onCodeChange={handleCodeChange}
                                 />
                             </div>
                         </Split>
@@ -132,7 +104,6 @@ export default function App() {
                         setActiveLessonId(id);
                         setCurrentView('ide');
                     }}
-                    progressMap={progressMap}
                 />
             )}
         </div>

@@ -1,4 +1,4 @@
-import type { Lesson, LessonProgress } from '../types';
+import type { Lesson } from '../types';
 
 /* ================================================================
  * LessonSidebar — Light theme with Google Material palette
@@ -7,7 +7,6 @@ import type { Lesson, LessonProgress } from '../types';
 
 interface LessonSidebarProps {
     lessons: Lesson[];
-    progressMap: Record<string, LessonProgress>;
     activeLessonId: string;
     onSelectLesson: (id: string) => void;
     collapsed: boolean;
@@ -26,7 +25,6 @@ function groupByCategory(lessons: Lesson[]): Record<string, Lesson[]> {
 
 export default function LessonSidebar({
     lessons,
-    progressMap,
     activeLessonId,
     onSelectLesson,
     collapsed,
@@ -47,9 +45,7 @@ export default function LessonSidebar({
                     </svg>
                 </button>
                 <div className="mt-6 flex flex-col gap-2">
-                    {lessons.map((lesson) => {
-                        const prog = progressMap[lesson.id];
-                        const pct = prog ? Math.round((prog.confirmedChars / prog.totalChars) * 100) : 0;
+                    {lessons.map((lesson, idx) => {
                         const isActive = lesson.id === activeLessonId;
                         return (
                             <button
@@ -61,7 +57,7 @@ export default function LessonSidebar({
                                     }`}
                                 title={lesson.title}
                             >
-                                {pct === 100 ? '✓' : `${pct}`}
+                                {idx + 1}
                             </button>
                         );
                     })}
@@ -94,13 +90,8 @@ export default function LessonSidebar({
                             {category}
                         </h4>
                         <ul className="space-y-1">
-                            {categoryLessons.map((lesson) => {
-                                const prog = progressMap[lesson.id];
-                                const pct = prog
-                                    ? Math.round((prog.confirmedChars / prog.totalChars) * 100)
-                                    : 0;
+                            {categoryLessons.map((lesson, idx) => {
                                 const isActive = lesson.id === activeLessonId;
-                                const isComplete = pct === 100;
 
                                 return (
                                     <li key={lesson.id}>
@@ -111,37 +102,13 @@ export default function LessonSidebar({
                                                 : 'text-[#5F6368] hover:bg-[#E8EAED] hover:text-[#202124]'
                                                 }`}
                                         >
-                                            {/* Progress ring */}
-                                            <div className="relative shrink-0 w-8 h-8">
-                                                <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
-                                                    <circle
-                                                        cx="16" cy="16" r="12"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2.5"
-                                                        className="text-[#E8EAED]"
-                                                    />
-                                                    <circle
-                                                        cx="16" cy="16" r="12"
-                                                        fill="none"
-                                                        strokeWidth="2.5"
-                                                        strokeDasharray={`${pct * 0.754} 100`}
-                                                        strokeLinecap="round"
-                                                        className={isComplete ? 'text-[#34A853]' : 'text-[#4285F4]'}
-                                                    />
-                                                </svg>
-                                                {isComplete && (
-                                                    <span className="absolute inset-0 flex items-center justify-center text-[#34A853] text-xs">
-                                                        ✓
-                                                    </span>
-                                                )}
+                                            {/* Simple list disk instead of progress ring */}
+                                            <div className="relative shrink-0 w-8 h-8 flex items-center justify-center">
+                                                <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-[#4285F4]' : 'bg-[#DADCE0]'}`}></div>
                                             </div>
 
                                             <div className="min-w-0 flex-1">
                                                 <p className="text-sm font-medium truncate">{lesson.title}</p>
-                                                <p className={`text-xs transition-colors ${isActive ? 'text-[#4285F4]/60' : 'text-[#BDC1C6]'}`}>
-                                                    {isComplete ? '已完成' : `${pct}% 已完成`}
-                                                </p>
                                             </div>
                                         </button>
                                     </li>
