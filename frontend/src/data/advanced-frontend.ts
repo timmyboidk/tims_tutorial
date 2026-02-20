@@ -81,7 +81,7 @@ export default function FilterView() {
   const filtered = useMemo(() => {
     if (!query) return rawData.slice(0, 100);
     return rawData.filter(i => i.includes(query)).slice(0, 100);
-  }, [query]); // ❌ 若不用 useMemo，输入 query 甚至点击其它无关按钮时，都会走上面这一大坨过滤逻辑
+  }, [query]); // ❌ 若不用 useMemo，输入 query 甚至点击其它无关按钮时，都会走上面这大量过滤逻辑
 
   //  锁定回调引用。如果用普通函数，每次 FilterView 更新都会生成新的 
   // onItemClick 指针，从而击穿 ExpensiveList 的 React.memo 安全机制
@@ -98,7 +98,7 @@ export default function FilterView() {
   );
 }
 \n\`\`\``,
-        targetCode: `import React, { useState, useMemo, useCallback } from 'react';\n\ninterface ExpensiveListProps {\n  items: string[];\n  onItemClick: (item: string) => void;\n}\n\n//  Memozied 子组件，依靠引用相等来防守不必要的渲染\nconst ExpensiveList = React.memo(({ items, onItemClick }: ExpensiveListProps) => {\n  console.log('Heavy render triggered!');\n  return (\n    <ul>\n      {items.map((it) => (\n        <li key={it} onClick={() => onItemClick(it)}>{it}</li>\n      ))}\n    </ul>\n  );\n});\n\nexport default function FilterView() {\n  const [query, setQuery] = useState('');\n  const [clicks, setClicks] = useState(0);\n\n  //  模拟数万条数据的纯静态列表\n  const rawData = Array.from({ length: 10000 }, (_, i) => \`Item \${i}\`);\n\n  //  只有当 query 发生改变时，才重新迭代这 10000 条数据\n  const filtered = useMemo(() => {\n    if (!query) return rawData.slice(0, 100);\n    return rawData.filter(i => i.includes(query)).slice(0, 100);\n  }, [query]); // ❌ 若不用 useMemo，输入 query 甚至点击其它无关按钮时，都会走上面这一大坨过滤逻辑\n\n  //  锁定回调引用。如果用普通函数，每次 FilterView 更新都会生成新的 \n  // onItemClick 指针，从而击穿 ExpensiveList 的 React.memo 安全机制\n  const handleClick = useCallback((item: string) => {\n    console.log(\`You clicked \${item}\`);\n  }, []);\n\n  return (\n    <div>\n      <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Filter..." />\n      <button onClick={() => setClicks(c => c + 1)}>Clicks: {clicks}</button>\n      <ExpensiveList items={filtered} onItemClick={handleClick} />\n    </div>\n  );\n}\n`,
+        targetCode: `import React, { useState, useMemo, useCallback } from 'react';\n\ninterface ExpensiveListProps {\n  items: string[];\n  onItemClick: (item: string) => void;\n}\n\n//  Memozied 子组件，依靠引用相等来防守不必要的渲染\nconst ExpensiveList = React.memo(({ items, onItemClick }: ExpensiveListProps) => {\n  console.log('Heavy render triggered!');\n  return (\n    <ul>\n      {items.map((it) => (\n        <li key={it} onClick={() => onItemClick(it)}>{it}</li>\n      ))}\n    </ul>\n  );\n});\n\nexport default function FilterView() {\n  const [query, setQuery] = useState('');\n  const [clicks, setClicks] = useState(0);\n\n  //  模拟数万条数据的纯静态列表\n  const rawData = Array.from({ length: 10000 }, (_, i) => \`Item \${i}\`);\n\n  //  只有当 query 发生改变时，才重新迭代这 10000 条数据\n  const filtered = useMemo(() => {\n    if (!query) return rawData.slice(0, 100);\n    return rawData.filter(i => i.includes(query)).slice(0, 100);\n  }, [query]); // ❌ 若不用 useMemo，输入 query 甚至点击其它无关按钮时，都会走上面这大量过滤逻辑\n\n  //  锁定回调引用。如果用普通函数，每次 FilterView 更新都会生成新的 \n  // onItemClick 指针，从而击穿 ExpensiveList 的 React.memo 安全机制\n  const handleClick = useCallback((item: string) => {\n    console.log(\`You clicked \${item}\`);\n  }, []);\n\n  return (\n    <div>\n      <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Filter..." />\n      <button onClick={() => setClicks(c => c + 1)}>Clicks: {clicks}</button>\n      <ExpensiveList items={filtered} onItemClick={handleClick} />\n    </div>\n  );\n}\n`,
         comments: [
             { line: 8, text: '//  配合下方的 useCallback，构成完整的防御掩体' },
             { line: 27, text: '//  极大地减免计算开销' },
@@ -142,7 +142,7 @@ export default async function HelpCenterPage() {
         targetCode: `// 这是一个基于 Next.js App Router 约定构建的静态页面组件\n\n//  强行告知 Next.js：这个文件在打包成最终产物时，就给我生成一堆 .html 文件，不要在服务器上动态运行\nexport const dynamic = 'force-static';\n\ninterface Post {\n  id: number;\n  title: string;\n  body: string;\n}\n\n//  执行发生在 npm run build 阶段。服务器上的 Node.js 环境去请求 CMS 获取内容。\nexport default async function HelpCenterPage() {\n  const res = await fetch('https://jsonplaceholder.typicode.com/posts/1', {\n    //  让 Next.js 永远缓存这个请求响应，直到重新部署（SSG 的精髓）\n    cache: 'force-cache',\n  });\n  const post: Post = await res.json();\n\n  return (\n    <article className="prose lg:prose-xl p-8 max-w-2xl mx-auto">\n      <h1>{post.title}</h1>\n      <p>发布时间：构建时刻抓取</p>\n      <div className="mt-4text-gray-700">{post.body}</div>\n    </article>\n  );\n}\n`,
         comments: [
             { line: 4, text: '//  强制切入 SSG 模式的最快方式' },
-            { line: 15, text: '//  这个配置让 Next.js 在 Build 时将其烘焙为死静态数据' },
+            { line: 15, text: '//  这个配置让 Next.js 在 Build 时将其烘焙为纯静态数据' },
         ],
     },
     {

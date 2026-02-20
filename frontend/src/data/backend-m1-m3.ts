@@ -15,13 +15,13 @@ export const backendM1M3: Lesson[] = [
 
 ##  代码深度解析
 - **\`@SpringBootApplication\`**：别被这小小的一句注解蒙骗了！这其实是个含有巨大炸药包的组合外壳（里面包裹了 \`@Configuration\`, \`@EnableAutoConfiguration\`, \`@ComponentScan\`）。它的意思是：“从这个类所在的包目录往下深挖，把所有标注着 Bean 身份的组件全部抓起来加载！并根据我 \`pom.xml\` 里含有的依赖智能推断我要起内嵌 Tomcat 还是要配 MySql！”。
-- **\`@RestController\`**：这是给 \`@Controller\` 和 \`@ResponseBody\` 的缝合怪。他明示这不再是从前那种还要给你渲染 JSP 网页的老掉牙类，任何底下方法返回的 \`String\` 或是对象实体，全给我由自带的 Jackson 工具库强行碾压成 \`JSON\` 字符串再抛给 HTTP 网络通道外的浏览器前线。
+- **\`@RestController\`**：这是给 \`@Controller\` 和 \`@ResponseBody\` 的缝合怪。他明示这不再是从前那种还要给你渲染 JSP 网页的传统类，任何底下方法返回的 \`String\` 或是对象实体，全给我由自带的 Jackson 工具库强行碾压成 \`JSON\` 字符串再抛给 HTTP 网络通道外的浏览器前线。
 - **\`public static void main\`**：这是唯一的一个 Java 入口。它调用的 \`SpringApplication.run\` 将通过暴力反射启动整个应用上下文并永远卡挂在死循环监听端口中（哪怕你一句 Tomcat 的代码都没写过）。
 
 ###  底层原理剖析：IoC 容器与 Bean 生命周期的底层奥义
 **什么是 IoC（控制反转）机制？**
 在原始的远古 Java 编程里。如果你写了一个 Controller 想要去查数据库调用一个 \`UserService\` 你的代码肯定长这样：\`UserService myService = new UserService();\`！
-这有极大的两个致命后果：第一，内存灾难。每次请求来你就新 \`new\` 一个长得一模一样没变过的类导致内存被硬生生挤爆。第二：恐怖的强绑定。万一 \`UserService\` 实例化前需要强塞入五个连接池相关的带参构造器呢。你整个写满了一千个文件的到处新 new 对象都得大地震修改。
+这有极大的两个致命后果：第一，内存错误。每次请求来你就新 \`new\` 一个长得一模一样没变过的类导致内存被硬生生挤爆。第二：恐怖的强绑定。万一 \`UserService\` 实例化前需要强塞入五个连接池相关的带参构造器呢。你整个写满了一千个文件的到处新 new 对象都得大地震修改。
 \n进入 Spring 世界后，控制权重反转了：开发者你把手松开！你只需要在类头上盖一个公章 \`@Service\`。整个大后台会在服务器刚启动那一刹那依靠漫山遍野的反射与字节码扫频，搜出这些类兵并在内存深处用无参构造悄无声息地统一把他们仅用 \`Singleton（单例）\` 模式创建仅此有且只有一个的实例存入到一个犹如巨大散列表数据结构的 **BeanFactory (Bean 工厂存放池)** 仓库深处中保存。当你某个类想要使用它时，只需要 \`@Autowired\` 一开，它自动被以指针传导般无缝 **DI（Dependency Injection，依赖注入）** 赐予！这构筑了松散而无敌的企业大后方。这就是控制权上交工厂的反转神学！\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.video;
 
 import org.springframework.boot.SpringApplication;
@@ -49,7 +49,7 @@ public class VideoSaaSApplication {
 \n\`\`\``,
         targetCode: `package com.codeforge.video;\n\nimport org.springframework.boot.SpringApplication;\nimport org.springframework.boot.autoconfigure.SpringBootApplication;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n//  1⃣ 这是组合注解，开启自动装配与大扫除式的组件扫描\n@SpringBootApplication\n//  2⃣ 宣告此类专为前后端分离架构返回 JSON/纯文本\n@RestController\npublic class VideoSaaSApplication {\n\n    //  3⃣ JVM 的绝对单一入口程序\n    public static void main(String[] args) {\n        SpringApplication.run(VideoSaaSApplication.class, args);\n    }\n\n    //  4⃣ 第一个轻量级路由，往往由 K8s 拨测或者前置 Nginx 探针获取系统是否存活以决定要不要切断流量\n    @GetMapping("/api/health")\n    public String healthCheck() {\n        return "Video SaaS Backend is Running and Green!";\n    }\n}\n`,
         comments: [
-            { line: 9, text: '//  启动 Spring 引擎与黑魔法扫图' },
+            { line: 9, text: '//  启动 Spring 引擎与黑特殊逻辑扫图' },
             { line: 11, text: '//  专为分离架构提供 API 能力' },
             { line: 19, text: '//  将向全世界暴露存活与健康探针用于云端拨测' },
         ],
@@ -75,7 +75,7 @@ public class VideoSaaSApplication {
 **从手动处理连接池 \`Connection\` 到轻量 ORM 引擎：**
 \n在原生代码 \`JDBC\` 中我们要痛苦的开连接: \`Connection conn=...\`, 编写语句: \`PreparedStatement ps =...\`, 手段设置参数，还有万恶的必须放入 \`finally\` 才能关掉生怕炸服的 \`close()\`。
 **为什么 MyBatis 连个写出实现逻辑包裹的大括号 \`{}\` 都没有就完成了这一绝顶过程？**
-\n这是因为在启动时 MyBatis 介入了 Spring 的大生命周期，对标有在池内的这 Mapper 接口使用 Java 反射特性库 \`Proxy.newProxyInstance\`。凭空变出了一个隐形的假类将它包装。所有打向你 \`findByUsername\` 接口的调用全被强行导流到它的隐形大嘴 \`InvocationHandler.invoke()\` 函数。它拆壳提取出头部绑着的 \`@Select("...")\` 去其自带引擎库把绑着参数的 \`#{username}\` 安全转化为 \`?\` 预编译。随后直接找 Hikari 连接池申请执行获得大串字节并靠你标明的返回值为依托，暴力扫你实体的 \`set()\` 将游标里的行列转化成 Java 存活类的光辉结晶全自动甩出去。这种魔法称为极大削去 Boilerplate （样板代码）的工业美学实现！\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.video.user;
+\n这是因为在启动时 MyBatis 介入了 Spring 的大生命周期，对标有在池内的这 Mapper 接口使用 Java 反射特性库 \`Proxy.newProxyInstance\`。凭空变出了一个隐形的假类将它包装。所有打向你 \`findByUsername\` 接口的调用全被强行导流到它的隐形大嘴 \`InvocationHandler.invoke()\` 函数。它拆壳提取出头部绑着的 \`@Select("...")\` 去其自带引擎库把绑着参数的 \`#{username}\` 安全转化为 \`?\` 预编译。随后直接找 Hikari 连接池申请执行获得大串字节并靠你标明的返回值为依托，暴力扫你实体的 \`set()\` 将游标里的行列转化成 Java 存活类的光辉结晶全自动甩出去。这种特殊逻辑称为极大削去 Boilerplate （样板代码）的工业美学实现！\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.video.user;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -138,22 +138,22 @@ public class UserController {
         category: '模块2：安全屏障与无状态扩展', track: '后端工程',
         moduleNumber: 2, lessonNumber: 1, language: 'java',
         startingCode: '',
-        instructions: `# 不落凡尘的令牌守护：拦截器安全机制与 JWT 的数学魔法
+        instructions: `# 不落凡尘的令牌守护：拦截器安全机制与 JWT 的数学特殊逻辑
 
 ##  业务上下文与我们在做什么？
 在前端的第 5.1 课里我们把一个名为 \`JWT Token\` 的身份牌随附到了 Http 请求的最上面，犹如一张跨过茫茫网路的通行证来到了后端那由成千上万个受到保护的微服务 API 群前。
-\n如果后端在处理每条接口时还要手工调一次 \`if(isValidToken) {...}\` 这将造成严重交叉感染与散落灾难。我们将在这建立坚不可摧的安保长城：我们要在 Spring 一万条路线的汇集前端设下一道横跨一切的过滤器（或者我们在此使用拦截器 **HandlerInterceptor**），只要你没有拥有那把数学神钥解开，所有包含非公有的越权动作将立刻收到 401 Unauthorized 的天罚劈斩并永远拒绝进入业务！
+\n如果后端在处理每条接口时还要手工调一次 \`if(isValidToken) {...}\` 这将造成严重交叉感染与散落错误。我们将在这建立坚不可摧的安保长城：我们要在 Spring 一万条路线的汇集前端设下一道横跨一切的过滤器（或者我们在此使用拦截器 **HandlerInterceptor**），只要你没有拥有那把数学神钥解开，所有包含非公有的越权动作将立刻收到 401 Unauthorized 的天罚劈斩并永远拒绝进入业务！
 
 ##  代码深度解析
-- **\`HandlerInterceptor\`**：这如同在主路上强起的一个安检长廊。\`preHandle\` 方法非常特殊它是在 Controller 要去执行业务线的前零点一秒横叉进来的，并且能够通过 \`return false\` 的绝对否决权强行拦截中断这股执行流保护下沉应用免遇不测！
+- **\`HandlerInterceptor\`**：这类似在主路上强起的一个安检长廊。\`preHandle\` 方法非常特殊它是在 Controller 要去执行业务线的前零点一秒横叉进来的，并且能够通过 \`return false\` 的绝对否决权强行拦截中断这股执行流保护下沉应用免遇不测！
 - **密钥验证：\`Jwts.parser()\`**：如果你用一堆用随机字符串伪装或者修改了自己名字从 User 改为 Admin 想要偷偷通过放行的坏心者，只要这一句带着保存在最高机密环境下的 \`SECRET_KEY\` 盐值的探针扫过去并在执行到 \`parseClaimsJws\` 这一重手校验一瞬间。它的签名跟被恶意篡改明文将对不上直接导致那句抛落千丈跌至天际的 \`JwtException\` 抛出！黑客原形毕露。
 - **隐形投递 \`request.setAttribute\`**：这是一个极致细腻体贴的做法。既然我在门前花费大计算力验过了并拿到了提取的人名。我就将其挂入只在这个线程活着的这波 Http 洪流的行囊兜里，随后的 Controller 拿到就不复再解析一次去折损算力。
 
 ###  底层原理剖析：AOP 范式之美与 JWT (HMAC-SHA256) 签名密战
 **拦截器的本质（Interceptor / Filter 这堆横切逻辑）：AOP**
-面对一百个独立不相关的业务比如“点赞”与“修改密码”，如果你要在它们的肚子里填入一样的检验 Token、日志打印记录时长代码这就是极其丑陋的行为。\n**面向切面编程（Aspect-Oriented Programming）** 是这破局之道。想象那几百条请求就如一束根茎平行垂直向下的挂面面条，AOP 就是从中间咔嚓一刀横向切断并塞入一片夹心火腿阻截层（这就是切面 Aspect）。在这里处理完公共的事情再把原生的下半截请求给对接过去执行！这样就把认证，权限彻底与核心的“点赞保存到数据库”干脆地进行了物理意义绝断的摘离。这就是现代体系大框架。
+面对一百个独立不相关的业务比如“点赞”与“修改密码”，如果你要在它们的肚子里填入一样的检验 Token、日志打印记录时长代码这就是极其丑陋的行为。\n**面向切面编程（Aspect-Oriented Programming）** 是这破局之道。假设那几百条请求就如一束根茎平行垂直向下的挂面面条，AOP 就是从中间咔嚓一刀横向切断并塞入一片夹心火腿阻截层（这就是切面 Aspect）。在这里处理完公共的事情再把原生的下半截请求给对接过去执行！这样就把认证，权限完全与核心的“点赞保存到数据库”干脆地进行了物理意义绝断的摘离。这就是现代体系大框架。
 \n**JWT 加密原理为何如此强大能被称无状态（Stateless）？**
-传统的 Session 就如同你去澡堂：前台给你个手牌挂手上，并往大堂自己的黑板本子上写上 \`13号柜子 - Tim\` 记在这里面（占用高贵内存）。当你去取衣服它还得去扫一眼记录本这在极大规模跨越百台微服务横线极其吃力甚至互相读不到还要接个全网共享盘！
+传统的 Session 就类似你去澡堂：前台给你个手牌挂手上，并往系统首页自己的黑板本子上写上 \`13号柜子 - Tim\` 记在这里面（占用高贵内存）。当你去取衣服它还得去扫一眼记录本这在极大规模跨越百台微服务横线极其吃力甚至互相读不到还要接个全网共享盘！
 JWT 取代了这个大本本这叫无状态！服务器拿到它只需要做一个数学密核算术题（哈希散列）。这在计算领域由散列算法 \`HS256\` 所保证不可逆性：我用一段我后端偷偷深藏的超长乱码秘钥：\`SDF2!DDF5S#S\` 混合着那一段你传入的明朝文本如 \`Tim - role: Admin\`，绞碎算出一大串加密哈希比对发来的尾巴签名！只要这个秘钥不曾落入外部盗贼之手。除了它自己任何人改哪怕明文里面的一个拼写标点，算出的超长字符长哈希会全然面目全非！所以这就达到后端根本不记任何人状态，全靠它自己身上带着发来的校验数学题就可以做到百分百安全认领验证效果。横向扩展瞬间成为极轻易的事！\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.security;
 
 import io.jsonwebtoken.Claims;
@@ -218,8 +218,8 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         instructions: `# 拦截核爆流量的缓存海绵大动脉：Redis 实战
 
 ##  业务上下文与我们在做什么？
-想像一下：你搭建了一个短视频网站拥有着一万个日活。突然一个大 V 转发了你们一个爆笑段子视频，引流十万名真实活人观众犹如洪水般全蜂拥在哪怕只要是这一秒（Peak/Qps）。他们全都为了进这个首页！这可是要在极其沉重庞大的 \`MySQL\` 硬盘数据库里调用联合索引苦哈哈扫出一大段长串字符串的巨大操作。仅仅只需不到 2 秒你们的数据库由于超出并发承载能力上限将会立马被挤爆出并全部抛红 \`Connection Timeout\`。然后紧跟着你的所有集群将会全线下线炸裂！
-我们要用一块无比巨大海绵在这接住防波洪：**Redis (全内存极速键值大字典缓存库)** 。将硬盘（龟速）读取通过 \`@Cacheable\` 转为纯高频内存（光速）吞吐并拦截在这，使得穿透过去打在 MySQL 身上的并发数降为最初的 0.1% 防治绝大灾厄。
+想像一下：你搭建了一个短视频网站拥有着一万个日活。突然一个大 V 转发了你们一个爆笑段子视频，引流十万名真实活人观众犹如洪水般全蜂拥在哪怕只要是这一秒（Peak/Qps）。他们全都为了进这个首页！这可是要在极其沉重大型化的 \`MySQL\` 硬盘数据库里调用联合索引苦哈哈扫出一大段长串字符串的巨大操作。仅仅只需不到 2 秒你们的数据库由于超出并发承载能力上限将会立马被挤爆出并全部抛红 \`Connection Timeout\`。然后紧跟着你的所有集群将会全线下线炸裂！
+我们要用一块无比巨系统绵在这接住防波洪：**Redis (全内存高性能键值大字典缓存库)** 。将硬盘（龟速）读取通过 \`@Cacheable\` 转为纯高频内存（光速）吞吐并拦截在这，使得穿透过去打在 MySQL 身上的并发数降为最初的 0.1% 防治绝大灾厄。
 
 ##  代码深度解析
 - **\`@Cacheable\`（方法级别神行罩）**：这不仅只是一句随手写的配置注解。当它发现入参 \`id\` 在前置拦截库 Redis 搜没搜寻到的前置拦截网。如果命中了，抱歉！它甚至都不屑跑进 \`getVideoInfo\` 这小括号大括号里面去执行。它直接暴力用缓存字节串在微秒间反手糊在前段一脸并且结束了本阶段的生命战斗进程流。（如果没中？进入方法找底层数据库，并在跑出的最后一刻由后手顺路把那块珍贵成果复制偷偷推上 Redis 大字典以便后人乘凉！它一个人做完了两件事）
@@ -227,11 +227,11 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 - **\`@CachePut\` 与数据追平双写并轨策略**：当那些在后台勤勤恳恳的管理员编辑改变了某个热门的封皮图像等导致库变化并点取了保存修改更新（update）时，用这个极爆粗暴的新覆盖。无缝同步去把原位置用最新的冲刷刷新上去，这保障了数据那极其脆弱而要命的核心：**数据一致性**（避免给全网千万群众下发一张错了两天的陈芝麻烂片皮）。
 
 ###  底层原理剖析：Redis 的单线程神速与内存的 LRU 剔除
-**为什么 Redis 号称拥有单机达到 10+万并发读取的恐怖神力并不畏死锁？**
-不同于那个为了应堆海量繁复重型数据的有十来层结构和表锁以及死锁的 MySQL，或者是你 Java 中会疯狂开辟千百个打架撞车的线程去争抢资源的架构！
-Redis 在最初代骨络图设计的最底层：它是极其变态地只用着 **极度孤单的一颗 CPU 和单向排进一个处理管道的主线程隧道（单线程搭配多路 I/O 复用如 \`epoll\` 事件）**。这听起来慢？绝不！因为它从不进行让各种线扯皮并消耗海量时间和排阻的来回切换大片阵痛环境与防止别人读自己写的所需要设置极其麻烦的互斥霸占锁操作导致内乱问题。它一骑绝尘不染半点纤尘且全是操作比硬盘起步快千倍以超高赫兹速度的内存中的寻址地址。所以它达到了前无古人极致之光速界标！
+**为什么 Redis 号称拥有单机达到 10+万并发读取的恐怖神力并不畏固定绑定？**
+不同于那个为了应堆大量繁复重型数据的有十来层结构和表锁以及固定绑定的 MySQL，或者是你 Java 中会疯狂开辟千百个打架撞车的线程去争抢资源的架构！
+Redis 在最初代骨络图设计的最底层：它是极其变态地只用着 **极度孤单的一颗 CPU 和单向排进一个处理管道的主线程隧道（单线程搭配多路 I/O 复用如 \`epoll\` 事件）**。这听起来慢？绝不！因为它从不进行让各种线扯皮并消耗大量时间和排阻的来回切换大片阵痛环境与防止别人读自己写的所需要设置极其麻烦的互斥霸占锁操作导致内乱问题。它一骑绝尘不染半点纤尘且全是操作比硬盘起步快千倍以超高赫兹速度的内存中的寻址地址。所以它达到了前无古人极致之光速界标！
 \n**如果不加清理它的内存不就被堆炸了吗 (LRU Policy)？**
-内存很金贵（往往只能配置只有极小的 10GB 以内）。为了保护系统当 Redis 吞进了无数万个不热门只有一个人看的远古过期冷门影片占着坑不作为！必须开启比如它的 \`allkeys-lru (Least Recently Used，最冷落抛弃算法)\`：它记录了一个最近由于没有被人在上面碰一碰热乎下发的时间戳标记进行。当内满要放新物件而炸仓时他自动进行割草把这批最边缘的人一发清洗出局！它就像流水洗金，只留下当下的高光之子们保留护存在里面。\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.video.service;
+内存很金贵（往往只能配置只有极小的 10GB 以内）。为了保护系统当 Redis 吞进了无数万个不热门只有一个人看的远古过期冷门影片占着坑不作为！必须开启比如它的 \`allkeys-lru (Least Recently Used，最冷落抛弃算法)\`：它记录了一个最近由于没有被人在上面碰一碰热乎下发的时间戳标记进行。当内满要放新物件而炸仓时他自动进行割草把这批最边缘的人一发清洗出局！它类似于流水洗金，只留下当下的高光之子们保留护存在里面。\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.video.service;
 
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CachePut;
@@ -249,7 +249,7 @@ public class VideoCacheService {
 
     //  第一击：@Cacheable！当十万并发冲向查同一热门视频时...
     // 只有第一个倒霉蛋会跑到 MySQL 苦闷去扫出数据并且执行方法，并将结果打在名为 video 抽屉下 123 的标签上。
-    // 剩下的九万九千九百九十九个请求会在此注解这被高傲甩出纯极速内存储蓄并不再进入底层，以此拯救 MySQL 免受暴毙之祸！
+    // 剩下的九万九千九百九十九个请求会在此注解这被高傲甩出纯高性能内存储蓄并不再进入底层，以此拯救 MySQL 免受暴毙之祸！
     @Cacheable(value = "video", key = "#id")
     public VideoEntity getVideoInfo(String id) {
         //  模拟一下查数据库如果不用缓存将会是多么龟速漫长和极其高危极其费力沉重的重载拉取过程
@@ -266,7 +266,7 @@ public class VideoCacheService {
     }
 }
 \n\`\`\``,
-        targetCode: `package com.codeforge.video.service;\n\nimport org.springframework.cache.annotation.Cacheable;\nimport org.springframework.cache.annotation.CachePut;\nimport org.springframework.stereotype.Service;\n\n//  [服务层引入缓存屏障]\n@Service\npublic class VideoCacheService {\n\n    private final VideoRepository videoRepository;\n\n    public VideoCacheService(VideoRepository videoRepository) {\n        this.videoRepository = videoRepository;\n    }\n\n    //  第一击：@Cacheable！当十万并发冲向查同一热门视频时...\n    // 只有第一个倒霉蛋会跑到 MySQL 苦闷去扫出数据并且执行方法，并将结果打在名为 video 抽屉下 123 的标签上。\n    // 剩下的九万九千九百九十九个请求会在此注解这被高傲甩出纯极速内存储蓄并不再进入底层，以此拯救 MySQL 免受暴毙之祸！\n    @Cacheable(value = "video", key = "#id")\n    public VideoEntity getVideoInfo(String id) {\n        //  模拟一下查数据库如果不用缓存将会是多么龟速漫长和极其高危极其费力沉重的重载拉取过程\n        System.out.println("❌ 极度消耗数据库 IO 的动作发生！从磁盘读取: " + id);\n        return videoRepository.findById(id).orElse(null);\n    }\n\n    //  第二击：双写防呆追平一致！编辑或更新大牛内容发生更改这等重要之时\n    // 它并不去傻傻删除了再去让下面再次击穿！而是带出数据覆盖住这个标签！这确保我们和下面库的内容不再发生可悲差异背离\n    @CachePut(value = "video", key = "#video.id")\n    public VideoEntity updateVideoInfo(VideoEntity video) {\n        System.out.println(" 在数据库落库存储并实时顶在缓存上热乎推送给全部网民使用: " + video.getId());\n        return videoRepository.save(video);\n    }\n}\n`,
+        targetCode: `package com.codeforge.video.service;\n\nimport org.springframework.cache.annotation.Cacheable;\nimport org.springframework.cache.annotation.CachePut;\nimport org.springframework.stereotype.Service;\n\n//  [服务层引入缓存屏障]\n@Service\npublic class VideoCacheService {\n\n    private final VideoRepository videoRepository;\n\n    public VideoCacheService(VideoRepository videoRepository) {\n        this.videoRepository = videoRepository;\n    }\n\n    //  第一击：@Cacheable！当十万并发冲向查同一热门视频时...\n    // 只有第一个倒霉蛋会跑到 MySQL 苦闷去扫出数据并且执行方法，并将结果打在名为 video 抽屉下 123 的标签上。\n    // 剩下的九万九千九百九十九个请求会在此注解这被高傲甩出纯高性能内存储蓄并不再进入底层，以此拯救 MySQL 免受暴毙之祸！\n    @Cacheable(value = "video", key = "#id")\n    public VideoEntity getVideoInfo(String id) {\n        //  模拟一下查数据库如果不用缓存将会是多么龟速漫长和极其高危极其费力沉重的重载拉取过程\n        System.out.println("❌ 极度消耗数据库 IO 的动作发生！从磁盘读取: " + id);\n        return videoRepository.findById(id).orElse(null);\n    }\n\n    //  第二击：双写防呆追平一致！编辑或更新大牛内容发生更改这等重要之时\n    // 它并不去傻傻删除了再去让下面再次击穿！而是带出数据覆盖住这个标签！这确保我们和下面库的内容不再发生可悲差异背离\n    @CachePut(value = "video", key = "#video.id")\n    public VideoEntity updateVideoInfo(VideoEntity video) {\n        System.out.println(" 在数据库落库存储并实时顶在缓存上热乎推送给全部网民使用: " + video.getId());\n        return videoRepository.save(video);\n    }\n}\n`,
         comments: [
             { line: 19, text: '//  让十万级流量的查询动作仅仅变成了一把单枪匹马只执行一回的神技：内存盾墙拦截！' },
             { line: 23, text: '//  如果日志没出现这句。就表明它绝境完美保护数据库并高速送回' },
@@ -282,14 +282,14 @@ public class VideoCacheService {
         instructions: `# 斩断蜘蛛网绑定的异步杀器：Kafka 事件驱动
 
 ##  业务上下文与我们在做什么？
-假设有个用户叫 “雷电”，他点击了网页并发生了极为基础的“注册成为本平台的新号”功能返回成功。在古旧的系统中，这短短的一句注册后需要由于跟上一串如附骨之蛆的连带：“1. 发送迎新邮件！2. 给予系统积分 50奖励！ 3. 开通数据大表初始存储格！4. 进行反欺诈黑库排查并警告！” ——这些全都由于强写在一个主干流 \`A.func()\` 并调用各种外来系统的如 \`MailService.send\` 阻塞在你的同步单发线路上！当第三个邮件服务死机而迟延了十秒没发出，会导致“注册”动作界面由于苦苦傻等着这个非关键枝干而整个圆圈转了十秒被怒骂，并因代码超时全部回滚抹去连带着把原本正常该存的注册核心用户抛除！这将会由于依赖网缠绕成为一座牵一发动乱十方的死亡架构深渊！
+假设有个用户叫 “雷电”，他点击了网页并发生了极为基础的“注册成为本平台的新号”功能返回成功。在古旧的系统中，这短短的一句注册后需要由于跟上一串如附骨之蛆的连带：“1. 发送迎新邮件！2. 给予系统积分 50奖励！ 3. 开通数据大表初始存储格！4. 进行反欺诈黑库排查并警告！” ——这些全都由于强写在一个主干流 \`A.func()\` 并调用各种外来系统的如 \`MailService.send\` 阻塞在你的同步单发线路上！当第三个邮件服务死机而迟延了十秒没发出，会导致“注册”动作界面由于苦苦傻等着这个非关键枝干而整个圆圈转了十秒被怒骂，并因代码超时全部回滚抹去连带着把原本正常该存的注册核心用户抛除！这将会由于依赖网缠绕成为一座牵一发动乱十方的死亡架构底端系统！
 这要引入**事件驱动 (Event-Driven)**。注册的干它的不顾其他；丢下一颗炸药在深井信道后拍手就潇洒走开去发结果。而另外一批独立并行的外联订阅系统犹如恶狗抢食般去嗅出深井这个信道有包然后自己在下面分头开战且不互相拉扯连缀！我们将起航于现代流媒体大心脏组件 **Apache Kafka** 开启松散大分离。
 
 ##  代码深度解析
 - **\`KafkaTemplate.send()\`**：当它把形如 \`{"id": "user_218", "type": "REGISTER"}\` 这个消息的扁平 JSON 包装串成抛射出去飞入那个挂名为 \`user-registration-events\` 的神秘通道（Topic）里时，这件事就结案了不再归我们主体管辖！（这由于其极致快和不再卡停挂念它人而使得注册本身吞吐激跳百倍且绝对不惧因为下面发短信的组件宕机挂住本身）。
 - **\`@KafkaListener\`**：这就是在这个话题通道中蹲在暗处等待猎杀包的分离组件之神。有专门只管送金币服务的机器集群跑它；有专门防黑产风控系统也只标了这个独立蹲坑在旁边不打扰地挂在那里探取只负责扫描拦截警报。大家在这个管道各取同一包各自独立算各账目；就算邮件那批集群机器全场烧毁化灰断电重启！等它隔天被运维救起来了它仍然从它上次挂念没消费游标开始将里面还在里面的包补跑发送；绝对不会祸水乱扯引燃烧挂阻断那原本毫无交集的前排注册应用这尊大神。
 
-###  底层原理剖析：Kafka 磁盘 append-only 追加与消费者组（Consumer Group）魔法
+###  底层原理剖析：Kafka 磁盘 append-only 追加与消费者组（Consumer Group）特殊逻辑
 **从 MQ 的痛点到 Kafka 那变态万级别的巨量 IO 处理？**
 别家很多组件是发完就没了并在内存管理被拿了就算抛弃极易在丢包崩断里扯死由于追击不到历史大崩盘！以及在大量压倒的网峰由于内存无尽耗爆堆塞等。
 Kafka 这尊被巨型厂开发出的神像使用着一种极其返祖而极快无敌手法去写磁盘：它的机制绝不去做来回穿梭磁盘如那些苦追索引改动指针和在磁盘碎散上打补丁跳跃更新导致由于长寻道引火上身！他在其内核这犹如写个巨型无止尽永远无法篡改历史的日志大本子一样由于只在一个扇道顺向不断狂按**Append-Only（仅在文件最末端加粗屁股追加）**。这是大批量的完全依靠顺序流批发的序列顺序。操作系统对此有着极其神速级的极其疯狂 \`PageCache\` 极连缓存并且底层支持 \`Zero Copy (零拷贝极路网卡分发送策略)\` 的开挂帮助。这造就即使是在硬木磁盘，跑它的速度比大多一般人做内存系统写的还要变态狂快百倍并发能去硬捍压榨几十万 QPS 数据包巨浪拍门而不绝不宕毁死机的极其神机伟业。
@@ -342,7 +342,7 @@ public class AsyncNotificationListeners {
         comments: [
             { line: 20, text: '//  将信标抛挂虚无法界不管之后谁领走，这叫高度解耦并卸载长耗时业务分支' },
             { line: 31, text: '//  groupId 分组隔出了平行的互不干扰领地' },
-            { line: 38, text: '//  各司其职互阻连带失败死锁循环大爆炸可能！' },
+            { line: 38, text: '//  各司其职互阻连带失败固定绑定循环大爆炸可能！' },
         ],
     },
 ];

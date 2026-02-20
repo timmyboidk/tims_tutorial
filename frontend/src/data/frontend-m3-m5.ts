@@ -68,7 +68,7 @@ Node 环境在接收到请求时，提前执行 React 渲染过程，输出静�
     instructions: `# React Server Components 优化渲染性能
 
 ## 业务上下文
-面临庞大的列表数据渲染（如海量评论）时，传统的 CSR (Client-Side Rendering) 会导致向客户端传输大量的 JSON 数据并在客户端层级发生繁重的渲染，容易造成性能瓶颈乃至内存溢出。
+面临大型化的列表数据渲染（如大量评论）时，传统的 CSR (Client-Side Rendering) 会导致向客户端传输大量的 JSON 数据并在客户端层级发生繁重的渲染，容易造成性能瓶颈乃至内存溢出。
 
 利用 RSC (React Server Components)，你可以将复杂的组件计算完全放在服务端内完成。
 

@@ -44,7 +44,7 @@ public class SecurityConfig {
         comments: [
             { line: 15, text: '//  精确控制哪个接口属于公有地带' },
             { line: 21, text: '//  Spring Security 提供极其优雅的一键式 OAuth 接管' },
-            { line: 27, text: '//  API 应用关闭老掉牙的跨站防御策略，由 JWT 主宰' },
+            { line: 27, text: '//  API 应用关闭传统的跨站防御策略，由 JWT 主宰' },
         ],
         diagramMarkup: `sequenceDiagram\n    participant User as 用户\n    participant API as Spring Boot\n    participant Google as OAuth 提供商 (如 GitHub)\n    \n    User->>API: 请求访问 /dashboard\n    API-->>User: 302 重定向到 Github 授权页面\n    User->>Google: 输入账号密码，同意授权\n    Google-->>API: 回调 /login/oauth2/code/github，携带授权码 Code\n    API->>Google: 携带 Code 在后端网络中静默换取 Access Token 与资料\n    Google-->>API: 返回 { "email": "test@xxx.com" }\n    API-->>User: 签署本站 JWT 并发放。安全！`,
     },
@@ -54,7 +54,7 @@ public class SecurityConfig {
         category: '进阶：系统架构与网关安全', track: '后端工程',
         moduleNumber: 7, lessonNumber: 2, language: 'java',
         startingCode: '',
-        instructions: `# 利用 Lua 脚本和 Redis 防御接口被打爆\n\n## 业务上下文\n如果有一个黑客对你的“发短信验证码”接口 1 秒跑 1 万次请求，你的云短信账户会在这 1秒内被扣光余额。你需要为敏感 API 上锁，限流是构建稳固架构的必杀技（Rate Limiting）。我们将利用 Redis 和它执行 Lua 脚本时的绝对原子性，打造精准防护。\n\n## 学习目标\n- Redis Lua Script \`EVAL\` 原理。\n- 构建自定义 \`@RateLimit\` 注解和 AOP 拦截器。\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.security.ratelimit;
+        instructions: `# 利用 Lua 脚本和 Redis 防御接口大并发过载\n\n## 业务上下文\n如果有一个黑客对你的“发短信验证码”接口 1 秒跑 1 万次请求，你的云短信账户会在这 1秒内被扣光余额。你需要为敏感 API 上锁，限流是构建稳固架构的核心机制（Rate Limiting）。我们将利用 Redis 和它执行 Lua 脚本时的绝对原子性，打造精准防护。\n\n## 学习目标\n- Redis Lua Script \`EVAL\` 原理。\n- 构建自定义 \`@RateLimit\` 注解和 AOP 拦截器。\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.security.ratelimit;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -73,7 +73,7 @@ public class RateLimitAspect {
     private final StringRedisTemplate redisTemplate;
     private final HttpServletRequest request;
     
-    //  Lua 脚本，天生就是原子操作，绝不去读了再写导致超卖或者跨步
+    //  Lua 脚本，本身具备原子操作，绝不去读了再写导致超卖或者跨步
     private static final String LUA_SCRIPT = 
         "local current = redis.call('get', KEYS[1]) " +
         "if current and tonumber(current) >= tonumber(ARGV[1]) then return 0 end " +
@@ -107,7 +107,7 @@ public class RateLimitAspect {
     }
 }
 \n\`\`\``,
-        targetCode: `package com.codeforge.security.ratelimit;\n\nimport org.aspectj.lang.ProceedingJoinPoint;\nimport org.aspectj.lang.annotation.Around;\nimport org.aspectj.lang.annotation.Aspect;\nimport org.springframework.data.redis.core.StringRedisTemplate;\nimport org.springframework.data.redis.core.script.DefaultRedisScript;\nimport org.springframework.stereotype.Component;\nimport jakarta.servlet.http.HttpServletRequest;\n\nimport java.util.Collections;\n\n@Aspect\n@Component\npublic class RateLimitAspect {\n\n    private final StringRedisTemplate redisTemplate;\n    private final HttpServletRequest request;\n    \n    //  Lua 脚本，天生就是原子操作，绝不去读了再写导致超卖或者跨步\n    private static final String LUA_SCRIPT = \n        "local current = redis.call('get', KEYS[1]) " +\n        "if current and tonumber(current) >= tonumber(ARGV[1]) then return 0 end " +\n        "if current then redis.call('incr', KEYS[1]) else redis.call('set', KEYS[1], 1, 'EX', tonumber(ARGV[2])) end " +\n        "return 1";\n\n    public RateLimitAspect(StringRedisTemplate redisTemplate, HttpServletRequest request) {\n        this.redisTemplate = redisTemplate;\n        this.request = request;\n    }\n\n    //  AOP 环绕：任何含有 @RateLimit 的接口被撞击前，都必须过这一关\n    @Around("@annotation(rateLimit)")\n    public Object enforceLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {\n        String clientIp = request.getRemoteAddr();\n        String key = "ratelimit:" + joinPoint.getSignature().getName() + ":" + clientIp;\n\n        Long isAllowed = redisTemplate.execute(\n            new DefaultRedisScript<>(LUA_SCRIPT, Long.class),\n            Collections.singletonList(key),\n            String.valueOf(rateLimit.maxCalls()),\n            String.valueOf(rateLimit.timeWindowSeconds())\n        );\n\n        if (isAllowed == null || isAllowed == 0L) {\n            throw new RuntimeException("操作过于频繁，已经被系统限流！");\n        }\n\n        //  限流通过，放行继续执行真实长耗时业务逻辑\n        return joinPoint.proceed();\n    }\n}\n`,
+        targetCode: `package com.codeforge.security.ratelimit;\n\nimport org.aspectj.lang.ProceedingJoinPoint;\nimport org.aspectj.lang.annotation.Around;\nimport org.aspectj.lang.annotation.Aspect;\nimport org.springframework.data.redis.core.StringRedisTemplate;\nimport org.springframework.data.redis.core.script.DefaultRedisScript;\nimport org.springframework.stereotype.Component;\nimport jakarta.servlet.http.HttpServletRequest;\n\nimport java.util.Collections;\n\n@Aspect\n@Component\npublic class RateLimitAspect {\n\n    private final StringRedisTemplate redisTemplate;\n    private final HttpServletRequest request;\n    \n    //  Lua 脚本，本身具备原子操作，绝不去读了再写导致超卖或者跨步\n    private static final String LUA_SCRIPT = \n        "local current = redis.call('get', KEYS[1]) " +\n        "if current and tonumber(current) >= tonumber(ARGV[1]) then return 0 end " +\n        "if current then redis.call('incr', KEYS[1]) else redis.call('set', KEYS[1], 1, 'EX', tonumber(ARGV[2])) end " +\n        "return 1";\n\n    public RateLimitAspect(StringRedisTemplate redisTemplate, HttpServletRequest request) {\n        this.redisTemplate = redisTemplate;\n        this.request = request;\n    }\n\n    //  AOP 环绕：任何含有 @RateLimit 的接口被撞击前，都必须过这一关\n    @Around("@annotation(rateLimit)")\n    public Object enforceLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {\n        String clientIp = request.getRemoteAddr();\n        String key = "ratelimit:" + joinPoint.getSignature().getName() + ":" + clientIp;\n\n        Long isAllowed = redisTemplate.execute(\n            new DefaultRedisScript<>(LUA_SCRIPT, Long.class),\n            Collections.singletonList(key),\n            String.valueOf(rateLimit.maxCalls()),\n            String.valueOf(rateLimit.timeWindowSeconds())\n        );\n\n        if (isAllowed == null || isAllowed == 0L) {\n            throw new RuntimeException("操作过于频繁，已经被系统限流！");\n        }\n\n        //  限流通过，放行继续执行真实长耗时业务逻辑\n        return joinPoint.proceed();\n    }\n}\n`,
         comments: [
             { line: 20, text: '//  Redis Server 执行这段 Lua 脚本时，其它任何请求必须等待它执行完' },
             { line: 33, text: '//  AOP：面向切面编程。动态代理接管逻辑' },
@@ -167,7 +167,7 @@ public class GatewayRouter {
         category: '进阶：系统架构与网关安全', track: '后端工程',
         moduleNumber: 7, lessonNumber: 4, language: 'java',
         startingCode: '',
-        instructions: `# 逃离海量 API 的泥潭：GraphQL\n\n## 业务上下文\n传统 REST 有个顽疾叫 “Over-fetching（过多索取）”：前端仅仅想要视频的标题和封面，往往会被迫接收后端返回过来的包含作者详情、分类、打分等多余字段。用 GraphQL，前端只需说：“给我 title，剩下的都不要。” \n\n## 学习目标\n- 定义 \`schema.graphqls\` 描述超图。\n- 映射 \`@QueryMapping\`。\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.video.graphql;
+        instructions: `# 逃离大量 API 的泥潭：GraphQL\n\n## 业务上下文\n传统 REST 有个顽疾叫 “Over-fetching（过多索取）”：前端仅仅想要视频的标题和封面，往往会被迫接收后端返回过来的包含作者详情、分类、打分等多余字段。用 GraphQL，前端只需说：“给我 title，剩下的都不要。” \n\n## 学习目标\n- 定义 \`schema.graphqls\` 描述超图。\n- 映射 \`@QueryMapping\`。\n\n##  完整参考代码\n\`\`\`typescript\npackage com.codeforge.video.graphql;
 
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
