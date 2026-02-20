@@ -2,14 +2,6 @@
  * TypeScript interfaces for the CodeForge learning platform
  * ============================================================ */
 
-/** Inline instructor comment displayed inside the editor */
-export interface InstructorComment {
-    /** 1-based line number where the comment appears */
-    line: number;
-    /** The comment text to display */
-    text: string;
-}
-
 /** A single lesson in the curriculum */
 export interface Lesson {
     id: string;
@@ -26,14 +18,10 @@ export interface Lesson {
     lessonNumber: number;
     /** Markdown-formatted instructions / objectives */
     instructions: string;
-    /** The complete target code the user must type */
-    targetCode: string;
-    /** Code pre-filled in the editor when lesson starts */
-    startingCode: string;
     /** Mermaid diagram markup (backend lessons) */
     diagramMarkup?: string;
-    /** Language for Monaco syntax highlighting */
-    language: string;
-    /** Inline annotations from the instructor */
-    comments: InstructorComment[];
+    targetCode?: string;
+    startingCode?: string;
+    language?: string;
+    comments?: any[];
 }
