@@ -1,59 +1,101 @@
-# ─────────────────────────────────────────────────
-# CodeForge Infrastructure — Docker Compose
-# Provides MySQL, Redis, Kafka, and Zookeeper
-# ─────────────────────────────────────────────────
+version: '3.8'
 
 services:
+  # ==============================
+  # 💡 1. 核心应用层 (Application)
+  # ==============================
+
+  # 1.1 前端：短视频 SaaS React 看板
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80" # 将主机的 5173 路由到 Nginx 的 80
+    depends_on:
+      - api
+    networks:
+      - saas-network
+
+  # 1.2 后端：Spring Boot API 核心引擎
+  api:
+    build: ./backend
+    # ports:
+    # - "8080:8080" # 💡 强烈建议：在生产环境中，API 通常不直接对公网暴露 8080，而是通过前端 Nginx 的 /api 反向代理进内网！如果需要在宿主机调试则取消注释。
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/video_saas_db
+      - SPRING_REDIS_HOST=redis
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
+    networks:
+      - saas-network
+
+  # ==============================
+  # 💡 2. 数据与中间件层 (Infrastructure)
+  # ==============================
+
+  # 2.1 关系型数据库 MySQL
   mysql:
     image: mysql:8.0
-    container_name: codeforge-mysql
+    # ports:
+    #  - "3306:3306" # 💡 绝不允许对公网暴露 3306 端口，只允许 Docker 内网的服务（如 API）进行访问！
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: codeforge
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - MYSQL_ROOT_PASSWORD=saas_root_pwd
+      - MYSQL_DATABASE=video_saas_db
+      - MYSQL_USER=saas_user
+      - MYSQL_PASSWORD=saas_pwd
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
       retries: 5
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - saas-network
 
+  # 2.2 内存缓存 Redis (加速字典查询与热门视频)
   redis:
-    image: redis:7-alpine
-    container_name: codeforge-redis
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+    image: redis:alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - saas-network
 
+  # 2.3 分布式流处理平台 (Zookeeper + Kafka)
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.6.0
-    container_name: codeforge-zookeeper
+    image: confluentinc/cp-zookeeper:7.3.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
+    networks:
+      - saas-network
 
   kafka:
-    image: confluentinc/cp-kafka:7.6.0
-    container_name: codeforge-kafka
+    image: confluentinc/cp-kafka:7.3.0
     depends_on:
       - zookeeper
-    ports:
-      - "9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - saas-network
 
+# 💡 定义具名持久化卷，保证数据库重启不丢数据
 volumes:
-  mysql_data:
+  mysql-data:
+  redis-data:
+
+    # 💡 声明整个系统所在的私有网段
+networks:
+  saas-network:
+    driver: bridge
