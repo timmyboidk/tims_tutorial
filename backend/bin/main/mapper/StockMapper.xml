@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tutorial.mapper.StockMapper">
+
+    <resultMap id="StockResultMap" type="com.tutorial.model.Stock">
+        <id property="id" column="id"/>
+        <result property="symbol" column="symbol"/>
+        <result property="name" column="name"/>
+        <result property="price" column="price"/>
+        <result property="quantity" column="quantity"/>
+        <result property="category" column="category"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findAll" resultMap="StockResultMap">
+        SELECT * FROM stocks ORDER BY symbol
+    </select>
+
+    <select id="findById" resultMap="StockResultMap">
+        SELECT * FROM stocks WHERE id = #{id}
+    </select>
+
+    <select id="findBySymbol" resultMap="StockResultMap">
+        SELECT * FROM stocks WHERE symbol = #{symbol}
+    </select>
+
+    <select id="findByCategory" resultMap="StockResultMap">
+        SELECT * FROM stocks WHERE category = #{category} ORDER BY symbol
+    </select>
+
+    <insert id="insert" parameterType="com.tutorial.model.Stock" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO stocks (symbol, name, price, quantity, category)
+        VALUES (#{symbol}, #{name}, #{price}, #{quantity}, #{category})
+    </insert>
+
+    <update id="update" parameterType="com.tutorial.model.Stock">
+        UPDATE stocks
+        SET symbol = #{symbol}, name = #{name}, price = #{price},
+            quantity = #{quantity}, category = #{category}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM stocks WHERE id = #{id}
+    </delete>
+
+</mapper>

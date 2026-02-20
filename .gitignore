@@ -1,0 +1,33 @@
+# ─── Node ───
+node_modules/
+dist/
+.cache/
+
+# ─── IDE ───
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+
+# ─── Env ───
+.env
+.env.local
+.env.*.local
+
+# ─── Build ───
+*.log
+npm-debug.log*
+
+# ─── Java / Maven ───
+target/
+*.class
+*.jar
+*.war
+
+# ─── Docker ───
+docker-compose.override.yml

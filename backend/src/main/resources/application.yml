@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────
+# CodeForge Backend Configuration
+# ─────────────────────────────────────────────────
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: codeforge-backend
+
+  # ── MySQL / DataSource ──
+  datasource:
+    url: jdbc:mysql://localhost:3306/codeforge?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # ── Redis ──
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 5000ms
+
+  # ── Kafka ──
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: codeforge-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+# ── MyBatis ──
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.tutorial.model
+  configuration:
+    map-underscore-to-camel-case: true
+
+# ── JWT ──
+jwt:
+  secret: Y29kZWZvcmdlLXNlY3JldC1rZXktMjAyNC1wcm9kdWN0aW9uLXJlYWR5
+  expiration: 86400000  # 24 hours in milliseconds
+
+# ── Logging ──
+logging:
+  level:
+    com.tutorial: DEBUG
+    org.springframework.security: INFO
+    org.mybatis: DEBUG

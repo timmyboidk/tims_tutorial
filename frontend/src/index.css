@@ -1,0 +1,134 @@
+/* =====================================================
+ * CodeForge — Global Styles
+ * Light theme using Google Material Design palette
+ * ===================================================== */
+
+@import "tailwindcss";
+
+/* ─── Google Material Color Tokens ─── */
+:root {
+  --g-blue: #4285F4;
+  --g-red: #EA4335;
+  --g-yellow: #FBBC05;
+  --g-green: #34A853;
+
+  --g-bg: #FFFFFF;
+  --g-surface: #F8F9FA;
+  --g-border: #DADCE0;
+
+  --g-text-1: #202124;
+  /* primary text */
+  --g-text-2: #5F6368;
+  /* secondary text */
+  --g-text-3: #80868B;
+  /* tertiary / hint */
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: var(--g-bg);
+  color: var(--g-text-1);
+  font-family: 'Google Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Monaco Editor Decoration Classes ─── */
+
+/* Ghost text: the un-typed target code shown as light gray */
+.ghost-text-decoration {
+  color: #C4C7C5 !important;
+  font-style: normal !important;
+}
+
+/* Confirmed text: characters the user typed correctly */
+.confirmed-text-decoration {
+  color: var(--g-text-1) !important;
+  font-weight: 500 !important;
+}
+
+/* Error flash: brief red highlight on wrong keystroke */
+.error-flash-decoration {
+  background-color: rgba(234, 67, 53, 0.15) !important;
+  border-bottom: 2px solid var(--g-red) !important;
+}
+
+/* Inline comment: instructor annotation */
+.comment-decoration {
+  color: var(--g-text-3) !important;
+  font-style: italic !important;
+  opacity: 0.85;
+}
+
+/* ─── Animations ─── */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}
+
+/* ─── Scrollbar (subtle light style) ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--g-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #BDC1C6;
+}
+
+/* ─── Prose (markdown) overrides for light theme ─── */
+.prose-light h1,
+.prose-light h2,
+.prose-light h3 {
+  color: var(--g-text-1);
+  font-weight: 600;
+}
+
+.prose-light p,
+.prose-light li {
+  color: var(--g-text-2);
+  line-height: 1.75;
+}
+
+.prose-light strong {
+  color: var(--g-text-1);
+}
+
+.prose-light code {
+  color: var(--g-blue);
+  background: #E8F0FE;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.prose-light a {
+  color: var(--g-blue);
+}
+
+/* ─── Selection ─── */
+::selection {
+  background: rgba(66, 133, 244, 0.2);
+}
