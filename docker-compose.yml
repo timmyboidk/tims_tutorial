@@ -9,9 +9,12 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "5173:80" # 将主机的 5173 路由到 Nginx 的 80
+      - "5173:80" # 将主机的 5173 路由到 Nginx/Express 的 80
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/progress_db
     depends_on:
       - api
+      - mongo
     networks:
       - saas-network
 
@@ -39,7 +42,7 @@ services:
   # 💡 2. 数据与中间件层 (Infrastructure)
   # ==============================
 
-  # 2.1 关系型数据库 MySQL
+  # 2.1 关系型数据库 MySQL (官方支持 ARM64)
   mysql:
     image: mysql:8.0
     # ports:
@@ -58,7 +61,15 @@ services:
     networks:
       - saas-network
 
-  # 2.2 内存缓存 Redis (加速字典查询与热门视频)
+  # 2.2 课程进度数据库 MongoDB (官方支持 ARM64)
+  mongo:
+    image: mongo:7.0
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - saas-network
+
+  # 2.3 内存缓存 Redis (加速字典查询与热门视频)
   redis:
     image: redis:alpine
     command: redis-server --appendonly yes
@@ -67,26 +78,19 @@ services:
     networks:
       - saas-network
 
-  # 2.3 分布式流处理平台 (Zookeeper + Kafka)
+  # 2.4 分布式流处理平台 (使用官方 Apache 版 Zookeeper + Kafka)
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.0
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+    image: zookeeper:latest
     networks:
       - saas-network
 
   kafka:
-    image: confluentinc/cp-kafka:7.3.0
+    image: apache/kafka:latest
     depends_on:
       - zookeeper
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
     networks:
       - saas-network
 
@@ -94,6 +98,7 @@ services:
 volumes:
   mysql-data:
   redis-data:
+  mongo-data:
 
     # 💡 声明整个系统所在的私有网段
 networks:

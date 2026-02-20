@@ -19,12 +19,15 @@ const COMMENT_CLASS = 'comment-decoration';
 
 export default function GhostEditor({ lesson, onProgress }: GhostEditorProps) {
     const editorRef = useRef<any>(null);
+    const backgroundEditorRef = useRef<any>(null);
     const monacoRef = useRef<any>(null);
     const decorationsRef = useRef<string[]>([]);
+    const bgDecorationsRef = useRef<string[]>([]);
     const providerRef = useRef<any>(null);
 
     const [confirmedCount, setConfirmedCount] = useState(0);
     const [completed, setCompleted] = useState(false);
+    const hasSavedRef = useRef<boolean>(false);
 
     const targetCode = lesson.targetCode;
     const targetStrNoSpace = useMemo(() => targetCode.replace(/\s/g, ''), [targetCode]);
@@ -48,12 +51,65 @@ export default function GhostEditor({ lesson, onProgress }: GhostEditorProps) {
         setConfirmedCount(matchCount);
         if (matchCount >= totalChars && totalChars > 0) {
             setCompleted(true);
+            if (!hasSavedRef.current) {
+                hasSavedRef.current = true;
+                fetch('/api/progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lessonId: lesson.id, completed: true })
+                }).catch(err => console.error('Failed to save progress:', err));
+            }
         } else {
             setCompleted(false);
         }
 
         const editor = editorRef.current;
+        const bgEditor = backgroundEditorRef.current;
         const monaco = monacoRef.current;
+
+        // 💡 动态切分 targetCode 找到实际 offset，给 bgEditor 加装透明度（使得已经打出来的代码的重影消失）
+        if (bgEditor && monaco) {
+            let actualOffset = 0;
+            let nonSpaceFound = 0;
+            for (let i = 0; i < targetCode.length; i++) {
+                if (nonSpaceFound >= matchCount) {
+                    actualOffset = i;
+                    break;
+                }
+                if (!/\s/.test(targetCode[i])) {
+                    nonSpaceFound++;
+                }
+                if (i === targetCode.length - 1 && nonSpaceFound === matchCount) {
+                    actualOffset = targetCode.length;
+                }
+            }
+
+            const model = bgEditor.getModel();
+            if (model) {
+                const endPos = model.getPositionAt(actualOffset);
+                const fullEndPos = model.getPositionAt(targetCode.length);
+                const newBgDecorations = [];
+
+                // 前半部分：已经被正确敲击的代码，完全透明隐身
+                if (actualOffset > 0) {
+                    newBgDecorations.push({
+                        range: new monaco.Range(1, 1, endPos.lineNumber, endPos.column),
+                        options: { inlineClassName: 'ghost-hidden' }
+                    });
+                }
+
+                // 后半部分：属于“未来”的重影代码，淡出显示
+                if (actualOffset < targetCode.length) {
+                    newBgDecorations.push({
+                        range: new monaco.Range(endPos.lineNumber, endPos.column, fullEndPos.lineNumber, fullEndPos.column),
+                        options: { inlineClassName: 'ghost-visible' }
+                    });
+                }
+
+                bgDecorationsRef.current = bgEditor.deltaDecorations(bgDecorationsRef.current, newBgDecorations);
+            }
+        }
+
         if (editor && monaco) {
             const lines = currentVal.split('\n');
             const currentLineCount = lines.length;
@@ -70,11 +126,12 @@ export default function GhostEditor({ lesson, onProgress }: GhostEditorProps) {
                 }));
             decorationsRef.current = editor.deltaDecorations(decorationsRef.current, newDecorations);
         }
-    }, [targetStrNoSpace, totalChars, lesson.comments]);
+    }, [targetStrNoSpace, totalChars, targetCode, lesson.comments]);
 
     useEffect(() => {
         setConfirmedCount(0);
         setCompleted(false);
+        hasSavedRef.current = false;
         if (editorRef.current) {
             editorRef.current.setValue(startingCode);
             evaluateProgress(startingCode);
@@ -93,6 +150,13 @@ export default function GhostEditor({ lesson, onProgress }: GhostEditorProps) {
             editor.setValue(startingCode);
             evaluateProgress(startingCode);
 
+            // sync scrolling with background editor
+            editor.onDidScrollChange((e: any) => {
+                if (backgroundEditorRef.current) {
+                    backgroundEditorRef.current.setScrollPosition({ scrollTop: e.scrollTop, scrollLeft: e.scrollLeft });
+                }
+            });
+
             // 💡 侦听用户输入的变化，自动打分评估
             editor.onDidChangeModelContent(() => {
                 evaluateProgress(editor.getValue());
@@ -103,6 +167,7 @@ export default function GhostEditor({ lesson, onProgress }: GhostEditorProps) {
             }
 
             // 💡 把剩余的 Target Code 注册成类似 Copilot 的灰色幻影提示 (Ghost Text)
+            // 作为 Inline 补充，这样按 Tab 依然能够自动补全
             providerRef.current = monaco.languages.registerInlineCompletionsProvider(
                 ['typescript', 'javascript', 'java', 'json', 'yaml', 'dockerfile'],
                 {
@@ -172,8 +237,23 @@ export default function GhostEditor({ lesson, onProgress }: GhostEditorProps) {
 
     return (
         <div className="h-full w-full relative">
+            <style>{`
+                .ghost-visible {
+                    color: #9ca3af !important;
+                    opacity: 0.6 !important;
+                }
+                .ghost-hidden {
+                    opacity: 0 !important;
+                }
+                .monaco-bg-transparent .monaco-editor,
+                .monaco-bg-transparent .monaco-editor-background,
+                .monaco-bg-transparent .margin {
+                    background-color: transparent !important;
+                }
+            `}</style>
+
             {completed && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/80 backdrop-blur-sm animate-fade-in">
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/80 backdrop-blur-sm animate-fade-in">
                     <div className="text-center p-10 rounded-2xl bg-white border border-[#DADCE0] shadow-xl">
                         <h3 className="text-2xl font-bold text-[#34A853]">课程完成</h3>
                         <p className="mt-3 text-[#5F6368]">你已成功拼写出了所有核心业务逻辑代码！</p>
@@ -181,50 +261,100 @@ export default function GhostEditor({ lesson, onProgress }: GhostEditorProps) {
                 </div>
             )}
 
-            <div className="absolute top-0 left-0 right-0 z-10 h-1 bg-[#E8EAED]">
+            <div className="absolute top-0 left-0 right-0 z-20 h-1 bg-[#E8EAED]">
                 <div
                     className="h-full bg-[#4285F4] transition-all duration-200"
                     style={{ width: `${totalChars > 0 ? (confirmedCount / totalChars) * 100 : 0}%` }}
                 />
             </div>
 
-            <Editor
-                height="100%"
-                language={lesson.language === 'typescript' ? 'typescript' : 'java'}
-                theme="light"
-                onMount={handleEditorDidMount}
-                options={{
-                    fontSize: 14,
-                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                    fontLigatures: true,
-                    lineNumbers: 'on',
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    readOnly: false,
-                    wordWrap: 'on',
-                    automaticLayout: true,
-                    renderLineHighlight: 'line',
-                    cursorBlinking: 'smooth',
-                    smoothScrolling: true,
-                    padding: { top: 16, bottom: 16 },
-                    lineHeight: 22,
-                    tabSize: 2,
+            {/* Background Editor: 显示目标代码淡淡的重影 */}
+            <div className="absolute inset-0 z-0">
+                <Editor
+                    height="100%"
+                    language={lesson.language === 'typescript' ? 'typescript' : 'java'}
+                    theme="light"
+                    value={targetCode}
+                    options={{
+                        fontSize: 14,
+                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        fontLigatures: true,
+                        lineNumbers: 'on',
+                        minimap: { enabled: false },
+                        scrollBeyondLastLine: false,
+                        readOnly: true,
+                        domReadOnly: true,
+                        wordWrap: 'on',
+                        automaticLayout: true,
+                        renderLineHighlight: 'none',
+                        selectionHighlight: false,
+                        matchBrackets: 'never',
+                        occurrencesHighlight: 'off',
+                        padding: { top: 16, bottom: 16 },
+                        lineHeight: 22,
+                        tabSize: 2,
+                        scrollbar: { vertical: 'hidden', horizontal: 'hidden' }
+                    }}
+                    onMount={(editor) => {
+                        backgroundEditorRef.current = editor;
+                        // Initial evaluation to hide the already-typed starting code
+                        evaluateProgress(startingCode);
+                    }}
+                />
+            </div>
 
-                    // 💡 Unlock powerful native code autocompletion! (系统原生关键词提示)
-                    quickSuggestions: true,
-                    suggestOnTriggerCharacters: true,
-                    acceptSuggestionOnEnter: 'smart',
-                    parameterHints: { enabled: true },
-                    autoClosingBrackets: 'always',
-                    autoClosingQuotes: 'always',
-                    autoIndent: 'full',
-                    formatOnType: true,
-                    formatOnPaste: true,
+            {/* Foreground Editor: 用户实际输入的地方，背景透明！ */}
+            <div className="absolute inset-0 z-10 opacity-100">
+                <Editor
+                    height="100%"
+                    className="monaco-bg-transparent"
+                    language={lesson.language === 'typescript' ? 'typescript' : 'java'}
+                    beforeMount={(monaco) => {
+                        monaco.editor.defineTheme('transparentTheme', {
+                            base: 'vs',
+                            inherit: true,
+                            rules: [],
+                            colors: {
+                                'editor.background': '#ffffff00',
+                                'editorGutter.background': '#ffffff00',
+                                'editorLineNumber.foreground': '#00000000',
+                                'editorLineNumber.activeForeground': '#00000000',
+                            }
+                        });
+                    }}
+                    theme="transparentTheme"
+                    onMount={handleEditorDidMount}
+                    options={{
+                        fontSize: 14,
+                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        fontLigatures: true,
+                        lineNumbers: 'on',
+                        minimap: { enabled: false },
+                        scrollBeyondLastLine: false,
+                        readOnly: false,
+                        wordWrap: 'on',
+                        automaticLayout: true,
+                        renderLineHighlight: 'line',
+                        cursorBlinking: 'smooth',
+                        smoothScrolling: true,
+                        padding: { top: 16, bottom: 16 },
+                        lineHeight: 22,
+                        tabSize: 2,
 
-                    // 💡 Enable our Copilot ghost text plugin (按 TAB 直接填充)
-                    inlineSuggest: { enabled: true },
-                }}
-            />
+                        quickSuggestions: true,
+                        suggestOnTriggerCharacters: true,
+                        acceptSuggestionOnEnter: 'smart',
+                        parameterHints: { enabled: true },
+                        autoClosingBrackets: 'always',
+                        autoClosingQuotes: 'always',
+                        autoIndent: 'full',
+                        formatOnType: true,
+                        formatOnPaste: true,
+
+                        inlineSuggest: { enabled: true },
+                    }}
+                />
+            </div>
         </div>
     );
 }

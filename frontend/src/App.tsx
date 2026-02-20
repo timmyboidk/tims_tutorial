@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Split from 'react-split';
 import Header from './components/Header';
 import LessonSidebar from './components/LessonSidebar';
@@ -32,6 +32,30 @@ export default function App() {
 
     const activeLesson = lessons.find((l) => l.id === activeLessonId) || lessons[0];
     const activeProgress = progressMap[activeLesson.id];
+
+    // Load persisted progress on mount
+    useEffect(() => {
+        fetch('/api/progress')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.completedLessons) {
+                    setProgressMap(prev => {
+                        const newMap = { ...prev };
+                        for (const lessonId of data.completedLessons) {
+                            if (newMap[lessonId]) {
+                                newMap[lessonId] = {
+                                    ...newMap[lessonId],
+                                    confirmedChars: newMap[lessonId].totalChars,
+                                    completed: true
+                                };
+                            }
+                        }
+                        return newMap;
+                    });
+                }
+            })
+            .catch(err => console.error('Failed to fetch progress:', err));
+    }, []);
 
     /** Update progress for the active lesson */
     const handleProgress = useCallback(
