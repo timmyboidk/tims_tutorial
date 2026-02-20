@@ -37,7 +37,7 @@ export default function App() {
                         />
 
                         {/* Central pane: Instructions / Content */}
-                        <div className="flex-1 overflow-hidden">
+                        <div className="flex-1 h-full overflow-y-auto bg-[#F8FAFC]">
                             <InstructionPane
                                 lesson={activeLesson}
                             />
