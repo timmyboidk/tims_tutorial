@@ -46,6 +46,11 @@ export default function MermaidDiagram({ markup, completedSteps }: MermaidDiagra
     const getHighlightedMarkup = useCallback(() => {
         let result = markup;
 
+        // Only apply node styles to flowcharts/graphs
+        if (!markup.trim().startsWith('graph') && !markup.trim().startsWith('flowchart')) {
+            return result;
+        }
+
         // Remove all existing style lines so we can rewrite them
         result = result.replace(/\n\s*style\s+\w+\s+fill:.*$/gm, '');
 

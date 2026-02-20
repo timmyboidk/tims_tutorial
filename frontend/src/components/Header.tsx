@@ -7,15 +7,25 @@ interface HeaderProps {
     lessonTitle: string;
     confirmedChars: number;
     totalChars: number;
+    onBackToRoadmap?: () => void;
 }
 
-export default function Header({ lessonTitle, confirmedChars, totalChars }: HeaderProps) {
+export default function Header({ lessonTitle, confirmedChars, totalChars, onBackToRoadmap }: HeaderProps) {
     const pct = totalChars > 0 ? Math.round((confirmedChars / totalChars) * 100) : 0;
 
     return (
-        <header className="flex items-center justify-between px-8 h-16 bg-white border-b border-[#DADCE0] shrink-0">
+        <header className="flex items-center justify-between px-8 h-16 bg-white border-b border-[#DADCE0] shrink-0 z-10 relative">
             {/* Branding */}
             <div className="flex items-center gap-4">
+                {onBackToRoadmap && (
+                    <button
+                        onClick={onBackToRoadmap}
+                        className="flex items-center justify-center text-[#5F6368] hover:text-[#202124] hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors text-sm font-medium mr-2"
+                        title="返回路线图"
+                    >
+                        ← 返回路线图
+                    </button>
+                )}
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-[#4285F4] flex items-center justify-center">
                         <span className="text-white font-bold text-sm">C</span>
