@@ -21,7 +21,17 @@ export const frontendM3M5: Lesson[] = [
 ### 🧠 底层原理剖析：SSR 生命周期与 Hydration 脱水/注水流
 **Server-Side Rendering (SSR) 到底是怎么做的？**
 当用户在浏览器输入网址按下回车。请求直达 Next.js / Node.js 服务器。Node 端会在毫秒内跑一遍你的 React 组件（这叫脱水 Dehydrate，把数据固化在毫无交互的静态 HTML 木乃伊体里）。浏览器光速收到了这份带着满屏幕内容的 HTML，所以**白屏时间（FP / FCP）极短**，用户立刻看到了精致排布好的含有视频和评论的页面。
-但是这时候，你如果点击上面的“重播按钮”，网页是不会有任何反应的！因为此时的页面依然只是毫无灵魂的骨架。等过了几百毫秒，隐藏在背后的 JS 执行引擎才把 React 框架的核心 JS 下载完毕并在浏览器运行，React 会遍历这份冰冷的 DOM，为其挂载上 \`onClick\`、\`onMouseOver\` 等事件神经系统。这一步称之为 **Hydration（注水复苏）**。自此，静态骨架才终于重获新生变成动态应用！`,
+但是这时候，你如果点击上面的“重播按钮”，网页是不会有任何反应的！因为此时的页面依然只是毫无灵魂的骨架。等过了几百毫秒，隐藏在背后的 JS 执行引擎才把 React 框架的核心 JS 下载完毕并在浏览器运行，React 会遍历这份冰冷的 DOM，为其挂载上 \`onClick\`、\`onMouseOver\` 等事件神经系统。这一步称之为 **Hydration（注水复苏）**。自此，静态骨架才终于重获新生变成动态应用！\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport type { Metadata } from 'next';
+import VideoPlayer from '@/components/VideoPlayer';
+
+// 💡 动态生成页面的 Meta 标签，这对 SaaS 营销至关重要
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  // 这里在 Node.js 服务器端运行
+  const res = await fetch(\`http://localhost:8080/api/videos/\${params.id}\`);
+  const video = await res.json();
+  
+  return {
+    title: \`\${video.title} - 短视频 SaaS\\n\`\`\``,
         targetCode: `import type { Metadata } from 'next';\nimport VideoPlayer from '@/components/VideoPlayer';\n\n// 💡 动态生成页面的 Meta 标签，这对 SaaS 营销至关重要\nexport async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {\n  // 这里在 Node.js 服务器端运行\n  const res = await fetch(\`http://localhost:8080/api/videos/\${params.id}\`);\n  const video = await res.json();\n  \n  return {\n    title: \`\${video.title} - 短视频 SaaS\`, // 💡 给爬虫看的\n    description: video.description,\n    openGraph: { images: [video.thumbnail] } // 💡 在社交媒体分享时的封面图\n  };\n}\n\n// 💡 Next.js 服务端组件渲染页面 HTML\nexport default async function VideoPage({ params }: { params: { id: string } }) {\n  const res = await fetch(\`http://localhost:8080/api/videos/\${params.id}\`);\n  const video = await res.json();\n\n  return (\n    <main className="max-w-4xl mx-auto p-4">\n      <h1 className="text-2xl font-bold mb-4">{video.title}</h1>\n      {/* 💡 发送完整的包含 Video DOM 的 HTML 回到终端浏览器 */}\n      <VideoPlayer url={video.url} />\n    </main>\n  );\n}\n`,
         comments: [
             { line: 5, text: '// 💡 动态提取参数并请求后端，产出精准 SEO 内容' },
@@ -50,7 +60,20 @@ export const frontendM3M5: Lesson[] = [
 在以往，如果你要在页面上引入一款重达 5MB 的日期转换库 \`Moment.js\` 去处理上百条评论的时间排版。无论是在使用 CSR 还是前课提及的传统 SSR 模式里，这 5MB 的库最终都难逃被强行打包进下发给用户的 \`chunk.js\` 中。
 但是 RSC 打破了这个物理法则！
 \nRSC 因为被宣判永远待在 Server 里，它永远不会穿越网线抵达客户端。客户端只接收它**执行过后的纯纯 HTML 产物**。
-于是，你在这 RSC 里尽情挥斥方遒——引哪怕 10 个体积几十兆的极其复杂的 Markdown To HTML 重重叠叠各种怪异包用于安全过滤用户那上百万乱七八糟的奇怪输入。对于拿老旧千元安卓机的最终受众来说：这颗 \`CommentsSection\` 服务组件产生给他们网路的负载量仅仅是极少轻微的几个带有 p 标签。你不仅保住了电量，保住了网速，也保住了生命力。`,
+于是，你在这 RSC 里尽情挥斥方遒——引哪怕 10 个体积几十兆的极其复杂的 Markdown To HTML 重重叠叠各种怪异包用于安全过滤用户那上百万乱七八糟的奇怪输入。对于拿老旧千元安卓机的最终受众来说：这颗 \`CommentsSection\` 服务组件产生给他们网路的负载量仅仅是极少轻微的几个带有 p 标签。你不仅保住了电量，保住了网速，也保住了生命力。\n\n## 📝 完整参考代码\n\`\`\`typescript\n// 💡 注意：默认情况下，Next.js App Router 里的所有组件都是 RSC
+import React from 'react';
+
+interface Comment {
+  id: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+}
+
+// 💡 这是一个 async 组件，只有在服务端才能这么写
+export default async function CommentsSection({ videoId }: { videoId: string }) {
+  // 💡 在企业级集群中，这个 fetch 走的是内网，毫秒级延迟
+  const res = await fetch(\`http://api-service:8080/api/videos/\${videoId}/comments\\n\`\`\``,
         targetCode: `// 💡 注意：默认情况下，Next.js App Router 里的所有组件都是 RSC\nimport React from 'react';\n\ninterface Comment {\n  id: string;\n  userId: string;\n  content: string;\n  createdAt: string;\n}\n\n// 💡 这是一个 async 组件，只有在服务端才能这么写\nexport default async function CommentsSection({ videoId }: { videoId: string }) {\n  // 💡 在企业级集群中，这个 fetch 走的是内网，毫秒级延迟\n  const res = await fetch(\`http://api-service:8080/api/videos/\${videoId}/comments\`, {\n    next: { revalidate: 60 } // 💡 ISR 缓存，每 60 秒才真正去后端查一次\n  });\n  const comments: Comment[] = await res.json();\n\n  return (\n    <section className="mt-8">\n      <h2 className="text-xl font-semibold mb-4 border-b pb-2">网友评论 ({comments.length})</h2>\n      <div className="space-y-4">\n        {comments.map((c) => (\n          <div key={c.id} className="p-4 bg-gray-50 rounded-lg">\n            <div className="flex justify-between text-sm text-gray-500 mb-2">\n              <span>用户 {c.userId}</span>\n              <span>{new Date(c.createdAt).toLocaleDateString()}</span>\n            </div>\n            <p className="text-gray-800">{c.content}</p>\n          </div>\n        ))}\n      </div>\n    </section>\n  );\n}\n`,
         comments: [
             { line: 12, text: '// 💡 并发与数据直接在服务端组装，不占用手机资源' },
@@ -78,7 +101,28 @@ export const frontendM3M5: Lesson[] = [
 ### 🧠 底层原理剖析：Server - Client 交接边界流控
 **不可逆的组件序列包裹**：
 在此体系下必须建立一条清晰的上下级物理定律防线：**服务端组件能 Import 并渲染客户端组件，但客户端组件绝对禁止反向载入服务端组件！**。
-这是因为如果客户端包裹服务端组件，服务端组件那个只存在于核心业务机房里的环境已经被客户端打穿从而带出了安全隐患以及它不具有 Node.js 特色（如没有 \`fs\` 硬盘读权限模块）自然完全运行不了导致崩溃。这就造成我们在编写根业务树骨架时极其讲求模块抽离技巧，“脏乱差”以及高互动的留守叶子，冰清玉洁负责搬运骨干数据或静态展示的安防在中端，这造就了 Next.js 新型应用的优渥且强硬的心智模型架构图谱。`,
+这是因为如果客户端包裹服务端组件，服务端组件那个只存在于核心业务机房里的环境已经被客户端打穿从而带出了安全隐患以及它不具有 Node.js 特色（如没有 \`fs\` 硬盘读权限模块）自然完全运行不了导致崩溃。这就造成我们在编写根业务树骨架时极其讲求模块抽离技巧，“脏乱差”以及高互动的留守叶子，冰清玉洁负责搬运骨干数据或静态展示的安防在中端，这造就了 Next.js 新型应用的优渥且强硬的心智模型架构图谱。\n\n## 📝 完整参考代码\n\`\`\`typescript\n// 💡 这行代码是界限：告诉 Next.js 这里需要发送 React JS 代码到浏览器
+'use client';
+
+import { useState } from 'react';
+
+interface LikeButtonProps {
+  videoId: string;
+  initialLikes: number;
+}
+
+export function InteractiveLikeButton({ videoId, initialLikes }: LikeButtonProps) {
+  const [likes, setLikes] = useState(initialLikes);
+  const [isLiked, setIsLiked] = useState(false);
+
+  const handleLike = async () => {
+    // 💡 乐观更新：不等后端返回，立刻把数 +1 变红，给用户极速的反馈体验
+    setIsLiked(!isLiked);
+    setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
+
+    try {
+      // 💡 下发给后端，后端会把这个行为抛入 Kafka 消息队列异步持久化
+      await fetch(\`/api/videos/\${videoId}/like\\n\`\`\``,
         targetCode: `// 💡 这行代码是界限：告诉 Next.js 这里需要发送 React JS 代码到浏览器\n'use client';\n\nimport { useState } from 'react';\n\ninterface LikeButtonProps {\n  videoId: string;\n  initialLikes: number;\n}\n\nexport function InteractiveLikeButton({ videoId, initialLikes }: LikeButtonProps) {\n  const [likes, setLikes] = useState(initialLikes);\n  const [isLiked, setIsLiked] = useState(false);\n\n  const handleLike = async () => {\n    // 💡 乐观更新：不等后端返回，立刻把数 +1 变红，给用户极速的反馈体验\n    setIsLiked(!isLiked);\n    setLikes((prev) => (isLiked ? prev - 1 : prev + 1));\n\n    try {\n      // 💡 下发给后端，后端会把这个行为抛入 Kafka 消息队列异步持久化\n      await fetch(\`/api/videos/\${videoId}/like\`, {\n        method: 'POST',\n        headers: { Authorization: \`Bearer \${localStorage.getItem('jwt')}\` }\n      });\n    } catch (e) {\n      // 💡 如果请求失败，必须回滚刚才的乐观状态\n      setIsLiked(isLiked);\n      setLikes((prev) => (isLiked ? prev + 1 : prev - 1));\n      alert('点赞失败，请检查网络');\n    }\n  };\n\n  return (\n    <button \n      onClick={handleLike}\n      className={\`font-bold py-2 px-6 rounded-full transition-transform active:scale-95 \${\n        isLiked ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'\n      }\`}\n    >\n      {isLiked ? '❤️ 已赞' : '🤍 点赞'} {likes.toLocaleString()}\n    </button>\n  );\n}\n`,
         comments: [
             { line: 2, text: '// 💡 激活浏览器的 onClick 与 useState 机能' },
@@ -105,7 +149,49 @@ export const frontendM3M5: Lesson[] = [
 ### 🧠 底层原理剖析：Box Model 机制与 BFC 重绘防污染
 **CSS Grid 两维排版的几何引擎究竟是怎么一回事？**
 以往统治江湖数十年的 Float，它是在流体脱离布局强行挂浮的，不仅伴临塌方极其可怜还要每次都要忍受去写 \`clear:both\` 进行丑陋弥合打补；而后来 Flex 崛起统一了一维行或者一列间的弹射响应分布比例；但到了构建真正的棋盘网格 Dashboard 面前由于必须在空间坐标里的纵横网度交点上做准确定位他们俩都会造成成吨堆叠的 DOM 冗余去包。
-\nGrid 是原生存在渲染环境内部的一个纯**二维布局引擎**。当声明它是 \`display: grid\` 的瞬息，引擎会自动隐居生成由那无数看不见的网格线构筑形成的细胞阵列轨道骨架并在那划分区域。此时任何子物置放时浏览器只需单纯去把它们如填充卡槽按位送入分配好的网格交线轨道内！不会再有以前为了达到此种规整平铺而出现的一大堆乱串或高低塌陷问题（BFC，Block Formatting Context的终极隔离防护边界），这就是其所被尊称 Web CSS 领域最后圣杯的根源。`,
+\nGrid 是原生存在渲染环境内部的一个纯**二维布局引擎**。当声明它是 \`display: grid\` 的瞬息，引擎会自动隐居生成由那无数看不见的网格线构筑形成的细胞阵列轨道骨架并在那划分区域。此时任何子物置放时浏览器只需单纯去把它们如填充卡槽按位送入分配好的网格交线轨道内！不会再有以前为了达到此种规整平铺而出现的一大堆乱串或高低塌陷问题（BFC，Block Formatting Context的终极隔离防护边界），这就是其所被尊称 Web CSS 领域最后圣杯的根源。\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport React from 'react';
+
+interface StatProps {
+  title: string;
+  value: number | string;
+  trend: number;
+  info: string;
+}
+
+// 💡 原子组件：SaaS 仪表盘中到处可见的指标卡片
+const StatCard = ({ title, value, trend, info }: StatProps) => (
+  <div className="bg-white rounded-xl border border-gray-100 p-6 flex flex-col shadow-sm relative overflow-hidden">
+    <h3 className="text-gray-500 text-sm font-medium mb-1">{title}</h3>
+    <div className="text-3xl font-extrabold text-[#202124]">{value}</div>
+    
+    <div className="mt-4 flex items-center justify-between">
+      <span className={\`text-xs font-bold \${trend > 0 ? 'text-green-500' : 'text-red-500'}\`}>
+        {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}% 从上周
+      </span>
+      <span className="text-xs text-gray-400">{info}</span>
+    </div>
+    
+    {/* 💡 装饰性的色块：增加界面呼吸感与高级感 */}
+    <div className="absolute top-0 right-0 -mt-4 -mr-4 w-16 h-16 bg-[#4285F4] opacity-5 rounded-full blur-2xl"></div>
+  </div>
+);
+
+export default function DashboardGrid() {
+  return (
+    <div className="p-8 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">运营中控台 / KPI</h1>
+      
+      {/* 💡 响应式 Grid：手机上1列，平板2列，极宽桌面4列 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <StatCard title="今日总点赞请求 (Kafka)" value="2,405,119" trend={12.5} info="过去24小时" />
+        <StatCard title="视频热点命中率 (Redis)" value="98.2%" trend={0.4} info="缓存 Miss 率 <2%" />
+        <StatCard title="新增注册用户" value="14,233" trend={-2.1} info="包含微信/手机号" />
+        <StatCard title="Kafka DLQ 堆积异常" value="0" trend={0} info="系统运行健康" />
+      </div>
+    </div>
+  );
+}
+\n\`\`\``,
         targetCode: `import React from 'react';\n\ninterface StatProps {\n  title: string;\n  value: number | string;\n  trend: number;\n  info: string;\n}\n\n// 💡 原子组件：SaaS 仪表盘中到处可见的指标卡片\nconst StatCard = ({ title, value, trend, info }: StatProps) => (\n  <div className="bg-white rounded-xl border border-gray-100 p-6 flex flex-col shadow-sm relative overflow-hidden">\n    <h3 className="text-gray-500 text-sm font-medium mb-1">{title}</h3>\n    <div className="text-3xl font-extrabold text-[#202124]">{value}</div>\n    \n    <div className="mt-4 flex items-center justify-between">\n      <span className={\`text-xs font-bold \${trend > 0 ? 'text-green-500' : 'text-red-500'}\`}>\n        {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}% 从上周\n      </span>\n      <span className="text-xs text-gray-400">{info}</span>\n    </div>\n    \n    {/* 💡 装饰性的色块：增加界面呼吸感与高级感 */}\n    <div className="absolute top-0 right-0 -mt-4 -mr-4 w-16 h-16 bg-[#4285F4] opacity-5 rounded-full blur-2xl"></div>\n  </div>\n);\n\nexport default function DashboardGrid() {\n  return (\n    <div className="p-8 bg-gray-50 min-h-screen">\n      <h1 className="text-2xl font-bold text-gray-900 mb-8">运营中控台 / KPI</h1>\n      \n      {/* 💡 响应式 Grid：手机上1列，平板2列，极宽桌面4列 */}\n      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">\n        <StatCard title="今日总点赞请求 (Kafka)" value="2,405,119" trend={12.5} info="过去24小时" />\n        <StatCard title="视频热点命中率 (Redis)" value="98.2%" trend={0.4} info="缓存 Miss 率 <2%" />\n        <StatCard title="新增注册用户" value="14,233" trend={-2.1} info="包含微信/手机号" />\n        <StatCard title="Kafka DLQ 堆积异常" value="0" trend={0} info="系统运行健康" />\n      </div>\n    </div>\n  );\n}\n`,
         comments: [
             { line: 12, text: '// 💡 border 与 shadow-sm 的组合成就了经典的现代卡片质感' },
@@ -136,7 +222,48 @@ export const frontendM3M5: Lesson[] = [
 当你缩放一个网页被逼到几千度极限或者用非常高端的 4K 分辨去审视这图形线条时为何连一点点微小可怜的阶梯状犬牙毛边也没有！它的原理是因为这根本就不是像素构成！
 \n**Canvas (画家视角)**：那是分配到了内存用一层密集的红绿彩色小格子布列而铺就而成的，画一笔留下的仅是内存中各种位置被染黑破坏过的像素！当拉长后由于系统靠插值强拉点阵它必然会形成巨大的马赛克糊状崩开导致严重变色！
 \n**SVG (几何学家视角)**：这种机制它传出的不是图像而是严谨如机械指令的“数学表达公式”。这就意味着不论如何将其向宇宙深处无限的放大投映。它都是显卡与浏览器重新接收后依靠内部那套实时运算着无理数级别最高精度的微分数学系统方程计算着出在那一当前时刻下最为丝滑锐利的物理向量坐标圆规硬描绘出界线框格。
-这也是我们要通过它手写 Sparklines 来保留大屏展示极其高精纯度不可被取代特性的究源原因。`,
+这也是我们要通过它手写 Sparklines 来保留大屏展示极其高精纯度不可被取代特性的究源原因。\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport React from 'react';
+
+interface LineChartProps {
+  data: number[]; // e.g. [10, 20, 15, 40, 30]
+  color?: string;
+}
+
+// 💡 一个轻量、无外部依赖的 SVG 微缩折线图 (Sparkline)
+export function Sparkline({ data, color = '#4285F4' }: LineChartProps) {
+  if (data.length === 0) return null;
+
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+
+  const height = 40;
+  const width = 100;
+  
+  // 💡 将数组中的值，映射到 x/y 坐标上生成一段连续路径
+  const points = data
+    .map((val, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y = height - ((val - min) / range) * height;
+      return \`\${x},\${y}\`;
+    })
+    .join(' L ');
+
+  return (
+    <svg viewBox={\`0 0 \${width} \${height}\`} className="w-full h-10 overflow-visible">
+      <path
+        d={\`M \${points}\`}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="drop-shadow-sm"
+      />
+    </svg>
+  );
+}
+\n\`\`\``,
         targetCode: `import React from 'react';\n\ninterface LineChartProps {\n  data: number[]; // e.g. [10, 20, 15, 40, 30]\n  color?: string;\n}\n\n// 💡 一个轻量、无外部依赖的 SVG 微缩折线图 (Sparkline)\nexport function Sparkline({ data, color = '#4285F4' }: LineChartProps) {\n  if (data.length === 0) return null;\n\n  const max = Math.max(...data);\n  const min = Math.min(...data);\n  const range = max - min || 1;\n\n  const height = 40;\n  const width = 100;\n  \n  // 💡 将数组中的值，映射到 x/y 坐标上生成一段连续路径\n  const points = data\n    .map((val, i) => {\n      const x = (i / (data.length - 1)) * width;\n      const y = height - ((val - min) / range) * height;\n      return \`\${x},\${y}\`;\n    })\n    .join(' L ');\n\n  return (\n    <svg viewBox={\`0 0 \${width} \${height}\`} className="w-full h-10 overflow-visible">\n      <path\n        d={\`M \${points}\`}\n        fill="none"\n        stroke={color}\n        strokeWidth="2"\n        strokeLinecap="round"\n        strokeLinejoin="round"\n        className="drop-shadow-sm"\n      />\n    </svg>\n  );\n}\n`,
         comments: [
             { line: 9, text: '// 💡 我们不仅只用现成的库，了解底层的渲染思想让你脱颖而出' },
@@ -169,7 +296,42 @@ export const frontendM3M5: Lesson[] = [
 最终所有发起都是由内部生成一个巨大的极度壮丽核心运行管区调用代码组合，这句关键执行代码其本质无非就是这样不断出栈并且递归衔接去构成一条线大循环：
 \n\`promise = promise.then(chain[x], chain[x+1])\`。
 这就解释了你在这里写这个钩子时为啥必须 \`return config\` 或者 \`return response\`（你不作为承接将这些棒子交递给下一个，这条由许许多多级联回调连绵延挂组成的巨大承诺反应链就因为被死掐中断抛出一个致命未定义报错！）。
-这是一个教科书级别用原生原生对象控制流构建巨大拦截管线的极致思想显形！`,
+这是一个教科书级别用原生原生对象控制流构建巨大拦截管线的极致思想显形！\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport axios from 'axios';
+
+// 💡 建立统一兵站：利用 Vite 的代理，我们将向同域名的 /api 发送所有请求 
+export const apiClient = axios.create({
+  baseURL: '/api',
+  timeout: 5000,
+});
+
+// 💡 请求拦截器：像安检员，在任何请求冲出浏览器之前截留它打上烙印
+apiclient.interceptors.request.use(
+  (config) => {
+    // 💡 从 localStorage 提取身份令牌
+    const token = localStorage.getItem('jwt');
+    if (token) {
+      // 💡 注入 OAuth2 / JWT 规范要求的 Bearer 授权头
+      config.headers['Authorization'] = \`Bearer \${token}\`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// 💡 响应拦截器：不管上层业务在干嘛，在这里先过滤所有非预期错误
+apiclient.interceptors.response.use(
+  (response) => response, // 正常 200 就放行
+  (error) => {
+    if (error.response?.status === 401) {
+      // 💡 401 意味着令牌已经过期失效，我们无情地把用户踢回登录页
+      console.error('鉴权失败，即将跳转登录...');
+      localStorage.removeItem('jwt');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+\n\`\`\``,
         targetCode: `import axios from 'axios';\n\n// 💡 建立统一兵站：利用 Vite 的代理，我们将向同域名的 /api 发送所有请求 \nexport const apiClient = axios.create({\n  baseURL: '/api',\n  timeout: 5000,\n});\n\n// 💡 请求拦截器：像安检员，在任何请求冲出浏览器之前截留它打上烙印\napiclient.interceptors.request.use(\n  (config) => {\n    // 💡 从 localStorage 提取身份令牌\n    const token = localStorage.getItem('jwt');\n    if (token) {\n      // 💡 注入 OAuth2 / JWT 规范要求的 Bearer 授权头\n      config.headers['Authorization'] = \`Bearer \${token}\`;\n    }\n    return config;\n  },\n  (error) => Promise.reject(error)\n);\n\n// 💡 响应拦截器：不管上层业务在干嘛，在这里先过滤所有非预期错误\napiclient.interceptors.response.use(\n  (response) => response, // 正常 200 就放行\n  (error) => {\n    if (error.response?.status === 401) {\n      // 💡 401 意味着令牌已经过期失效，我们无情地把用户踢回登录页\n      console.error('鉴权失败，即将跳转登录...');\n      localStorage.removeItem('jwt');\n      window.location.href = '/login';\n    }\n    return Promise.reject(error);\n  }\n);\n`,
         comments: [
             { line: 4, text: '// 💡 搭配我们在 FE 1.1 中配的 Vite Proxy 食用更佳' },
@@ -197,7 +359,57 @@ export const frontendM3M5: Lesson[] = [
 **LocalStorage 与持久存储的攻防之争：XSS！**
 很多人对于这里有无边无际的抱怨认为不应当存在！把这绝密天机一般至大之钥匙 JWT 放在一个极其透明谁来这只需按下 \`F12\` 然后按输入框查查并随便调用点小 \`javascript\` JS 即便如你我也能翻翻看得底朝天的叫做 \`localStorage\` 这个地方！这必然遭遇极可怕的网络浩劫 \`XSS(跨站脚本攻击 Cross-Site Scripting)\` 这个远古黑魔法灾潮的侵略。一旦别人在那评论区或者名称那注入一点点恶心的非法带勾脚本窃取，就能一瞬间复制并传到他们的后台，让所有人在第二天变成那些受黑控制发散流视频广告控制的可怜人！
 那该咋防这块？！
-这就需要依托后端强大的力量甚至在 Cookie 深处注入打上了 \`HttpOnly\`（阻断任何 JS 提取权限的绝对深宫结界）的标志下分发传输而不是发这种可以随意把玩的纯透明 JWT 串或者需要更严密的层层验证如通过 Redis 等二次把关，这在后端的 M6 以及更深的云边际，都有极深究源破解！这也是你走向进阶防波堤架构极佳的跳板，现在且感受着顺利调通拿到数据的极度畅快感吧！`,
+这就需要依托后端强大的力量甚至在 Cookie 深处注入打上了 \`HttpOnly\`（阻断任何 JS 提取权限的绝对深宫结界）的标志下分发传输而不是发这种可以随意把玩的纯透明 JWT 串或者需要更严密的层层验证如通过 Redis 等二次把关，这在后端的 M6 以及更深的云边际，都有极深究源破解！这也是你走向进阶防波堤架构极佳的跳板，现在且感受着顺利调通拿到数据的极度畅快感吧！\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport React, { useState } from 'react';
+import { apiClient } from './apiClient';
+
+export default function AuthGate() {
+  const [token, setToken] = useState<string | null>(localStorage.getItem('jwt'));
+  const [profile, setProfile] = useState<any>(null);
+
+  const handleLogin = async () => {
+    try {
+      // 💡 发起硬核的真实网络连接：调用 Spring Boot 的 LoginController
+      const res = await apiClient.post('/auth/login', { username: 'admin', password: 'password' });
+      
+      // 💡 存储命脉
+      const newToken = res.data.token;
+      localStorage.setItem('jwt', newToken);
+      setToken(newToken);
+
+    } catch (err) {
+      alert('后端服务未启动或用户名错误！');
+    }
+  };
+
+  const fetchSecretProfile = async () => {
+    try {
+      // 💡 由于设置了拦截器，这里完全不用管 Token，直接要数据即可，非常清爽
+      const res = await apiClient.get('/users/profile');
+      setProfile(res.data);
+    } catch (err) {
+      // 拦截器如果返回 401 我们早就被重定向踢走了，不需要处理越权
+    }
+  };
+
+  return (
+    <div className="p-10 text-center">
+      {!token ? (
+        <button onClick={handleLogin} className="bg-[#34A853] text-white px-8 py-3 rounded-full font-bold shadow-md">
+          全链路一键登录
+        </button>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-green-600 font-bold">✓ Token 保存在浏览器中</p>
+          <button onClick={fetchSecretProfile} className="bg-blue-600 text-white px-6 py-2 rounded shadow flex mx-auto">
+            抓取后端被保护的用户资料
+          </button>
+          {profile && <pre className="text-left bg-gray-100 p-4 mt-4 text-xs overflow-auto">{JSON.stringify(profile, null, 2)}</pre>}
+        </div>
+      )}
+    </div>
+  );
+}
+\n\`\`\``,
         targetCode: `import React, { useState } from 'react';\nimport { apiClient } from './apiClient';\n\nexport default function AuthGate() {\n  const [token, setToken] = useState<string | null>(localStorage.getItem('jwt'));\n  const [profile, setProfile] = useState<any>(null);\n\n  const handleLogin = async () => {\n    try {\n      // 💡 发起硬核的真实网络连接：调用 Spring Boot 的 LoginController\n      const res = await apiClient.post('/auth/login', { username: 'admin', password: 'password' });\n      \n      // 💡 存储命脉\n      const newToken = res.data.token;\n      localStorage.setItem('jwt', newToken);\n      setToken(newToken);\n\n    } catch (err) {\n      alert('后端服务未启动或用户名错误！');\n    }\n  };\n\n  const fetchSecretProfile = async () => {\n    try {\n      // 💡 由于设置了拦截器，这里完全不用管 Token，直接要数据即可，非常清爽\n      const res = await apiClient.get('/users/profile');\n      setProfile(res.data);\n    } catch (err) {\n      // 拦截器如果返回 401 我们早就被重定向踢走了，不需要处理越权\n    }\n  };\n\n  return (\n    <div className="p-10 text-center">\n      {!token ? (\n        <button onClick={handleLogin} className="bg-[#34A853] text-white px-8 py-3 rounded-full font-bold shadow-md">\n          全链路一键登录\n        </button>\n      ) : (\n        <div className="space-y-4">\n          <p className="text-green-600 font-bold">✓ Token 保存在浏览器中</p>\n          <button onClick={fetchSecretProfile} className="bg-blue-600 text-white px-6 py-2 rounded shadow flex mx-auto">\n            抓取后端被保护的用户资料\n          </button>\n          {profile && <pre className="text-left bg-gray-100 p-4 mt-4 text-xs overflow-auto">{JSON.stringify(profile, null, 2)}</pre>}\n        </div>\n      )}\n    </div>\n  );\n}\n`,
         comments: [
             { line: 11, text: '// 💡 等待后端的 AuthenticationManager 进行认证校验' },

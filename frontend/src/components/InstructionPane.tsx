@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import MermaidDiagram from './MermaidDiagram';
-import LivePreview from './LivePreview';
 import type { Lesson } from '../types';
 
 /* ================================================================
@@ -68,15 +67,6 @@ export default function InstructionPane({
                     </div>
                 )}
 
-                {/* Frontend: Live preview */}
-                {lesson.type === 'frontend' && (
-                    <div className="px-8 pb-8" style={{ height: '400px' }}>
-                        <h3 className="text-xs font-semibold text-[#80868B] uppercase tracking-wider mb-4">
-                            实时预览
-                        </h3>
-                        <LivePreview code={confirmedCode} language={lesson.language} />
-                    </div>
-                )}
             </div>
         </div>
     );

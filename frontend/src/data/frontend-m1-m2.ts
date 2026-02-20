@@ -26,7 +26,36 @@ export const frontendM1M2: Lesson[] = [
 当你在浏览器里请求 \`import { App } from './App.js'\` 时，Vite 作为一个极为轻量的 HTTP 服务器，拦截到这个请求，然后仅编译 \`App.js\` 这一张卡片（不含外部依赖，外部使用浏览器缓存）发送给前端。这种**按需编译**让它无论项目多大，启动时间永远是毫秒级。
 
 **Proxy 的本质**：
-CORS（跨域）是**浏览器**为了保护用户不受 CSRF 攻击而设立的城墙。后端的 Java 程序、Vite 运行所在的 Node.js 环境，是没有互相跨域限制的。Vite 的 \`server.proxy\` 就是利用了这一点：浏览器以为它是同源请求发给了 Vite (运行在 \`localhost:5173\`)，Vite 的 Node.js 底层再发起一个纯净的 HTTP TCP 请求发给内网的 Java。浏览器不知情，跨域问题就此完美解决。`,
+CORS（跨域）是**浏览器**为了保护用户不受 CSRF 攻击而设立的城墙。后端的 Java 程序、Vite 运行所在的 Node.js 环境，是没有互相跨域限制的。Vite 的 \`server.proxy\` 就是利用了这一点：浏览器以为它是同源请求发给了 Vite (运行在 \`localhost:5173\`)，Vite 的 Node.js 底层再发起一个纯净的 HTTP TCP 请求发给内网的 Java。浏览器不知情，跨域问题就此完美解决。\n\n## 📝 完整参考代码\n\`\`\`typescript\n/// <reference types="node" />
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+  resolve: {
+    alias: {
+      // 💡 路径别名：让你在代码里使用 '@/components' 而不是 '../../components'
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      // 💡 代理配置：这解决联调时最常见的 CORS 跨域问题
+      // 所有 /api 开头的请求都会被透明转发给 Spring Boot 后端
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
+});
+\n\`\`\``,
         targetCode: `/// <reference types="node" />\nimport { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport tailwindcss from '@tailwindcss/vite';\nimport path from 'path';\n\nexport default defineConfig({\n  plugins: [\n    react(),\n    tailwindcss(),\n  ],\n  resolve: {\n    alias: {\n      // 💡 路径别名：让你在代码里使用 '@/components' 而不是 '../../components'\n      '@': path.resolve(__dirname, './src'),\n    },\n  },\n  server: {\n    port: 5173,\n    proxy: {\n      // 💡 代理配置：这解决联调时最常见的 CORS 跨域问题\n      // 所有 /api 开头的请求都会被透明转发给 Spring Boot 后端\n      '/api': {\n        target: 'http://localhost:8080',\n        changeOrigin: true,\n      },\n    },\n  },\n});\n`,
         comments: [
             { line: 13, text: '// 💡 让深层目录引入变得优雅' },
@@ -58,7 +87,54 @@ SaaS 系统的第一道大门就是登录认证。用户输入账号密码后，
 
 **JWT 的无状态魔法**：
 Token 放在前端为什么是安全的？JWT 分为三段：头部（算法说明）、负载（里面明文存储了你的 username 和 role 等信息，不可放密码）、签名（Signature）。
-签名是由后端用一个除了它没人知道的秘钥（Secret）把前两部分进行哈希算出来的校验码。如果你在前端把角色也就是负载部分从 \`USER\` 篡改成 \`ADMIN\`，那会导致它和第三段签名不匹配，当你在下一次请求时发回给后端，后端验签立刻失败。因为无法验签，我们实现了**无需在后端内存保存“谁在线”的状态**也能验证所有用户，这非常利于微服务机器集群的横向扩容。`,
+签名是由后端用一个除了它没人知道的秘钥（Secret）把前两部分进行哈希算出来的校验码。如果你在前端把角色也就是负载部分从 \`USER\` 篡改成 \`ADMIN\`，那会导致它和第三段签名不匹配，当你在下一次请求时发回给后端，后端验签立刻失败。因为无法验签，我们实现了**无需在后端内存保存“谁在线”的状态**也能验证所有用户，这非常利于微服务机器集群的横向扩容。\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport React, { useState } from 'react';
+
+// 💡 接口定义了后端的承诺，这是全栈联调时前后端沟通的契约
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    username: string;
+    role: 'ADMIN' | 'USER';
+  };
+}
+
+const LoginForm: React.FC = () => {
+  const [username, setUsername] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  // 💡 泛型约束：状态只能是 Error 对象或 null
+  const [error, setError] = useState<Error | null>(null);
+
+  // 💡 明确声明这是表单的提交事件，获得 e.preventDefault() 的类型推导
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      // 💡 强转类型：我们告诉编译器，“相信我，返回值符合 LoginResponse 结构”
+      const data = (await res.json()) as LoginResponse;
+      localStorage.setItem('jwt', data.token);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Login failed'));
+    }
+  };
+
+  return (
+    <form onSubmit={handleLogin} className="p-6 bg-white shadow-md rounded-xl">
+      {error && <p className="text-red-500 mb-4">{error.message}</p>}
+      <input className="block border p-2 mb-2 w-full" type="text" placeholder="Username"
+        value={username} onChange={e => setUsername(e.target.value)} />
+      <input className="block border p-2 mb-4 w-full" type="password" placeholder="Password"
+        value={password} onChange={e => setPassword(e.target.value)} />
+      <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">登录</button>
+    </form>
+  );
+};
+
+export default LoginForm;\n\`\`\``,
         targetCode: `import React, { useState } from 'react';\n\n// 💡 接口定义了后端的承诺，这是全栈联调时前后端沟通的契约\ninterface LoginResponse {\n  token: string;\n  user: {\n    id: string;\n    username: string;\n    role: 'ADMIN' | 'USER';\n  };\n}\n\nconst LoginForm: React.FC = () => {\n  const [username, setUsername] = useState<string>('');\n  const [password, setPassword] = useState<string>('');\n  // 💡 泛型约束：状态只能是 Error 对象或 null\n  const [error, setError] = useState<Error | null>(null);\n\n  // 💡 明确声明这是表单的提交事件，获得 e.preventDefault() 的类型推导\n  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {\n    e.preventDefault();\n    try {\n      const res = await fetch('/api/auth/login', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ username, password }),\n      });\n      // 💡 强转类型：我们告诉编译器，“相信我，返回值符合 LoginResponse 结构”\n      const data = (await res.json()) as LoginResponse;\n      localStorage.setItem('jwt', data.token);\n    } catch (err) {\n      setError(err instanceof Error ? err : new Error('Login failed'));\n    }\n  };\n\n  return (\n    <form onSubmit={handleLogin} className="p-6 bg-white shadow-md rounded-xl">\n      {error && <p className="text-red-500 mb-4">{error.message}</p>}\n      <input className="block border p-2 mb-2 w-full" type="text" placeholder="Username"\n        value={username} onChange={e => setUsername(e.target.value)} />\n      <input className="block border p-2 mb-4 w-full" type="password" placeholder="Password"\n        value={password} onChange={e => setPassword(e.target.value)} />\n      <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">登录</button>\n    </form>\n  );\n};\n\nexport default LoginForm;`,
         comments: [
             { line: 3, text: '// 💡 契约：定义后端返回的数据结构' },
@@ -92,7 +168,43 @@ Token 放在前端为什么是安全的？JWT 分为三段：头部（算法说�
 
 **React \`useReducer\` 与批量渲染**：
 当你连续调了十次 \`setLoading(true)\`，\`setData(xxx)\`，React 是否会重绘十次 DOM？并不会。React 内部有一套极为精密的渲染队列与调和器（Fiber Reconciler）。18 版本的 React 支持全面**批量更新（Automatic Batching）**。
-但 \`useReducer\` 从逻辑源头上就更进一步：它直接把离散的更新揉成了对数据结构的单点快照重制（Snapshot）。当 \`dispatch({type: 'SUCCESS'})\` 执行后，新的 state 直接覆盖掉在 Fiber 树上挂载的旧节点状态，通过简单的 Object.is 对比，极快地决定出应该只渲染那一部分界面。`,
+但 \`useReducer\` 从逻辑源头上就更进一步：它直接把离散的更新揉成了对数据结构的单点快照重制（Snapshot）。当 \`dispatch({type: 'SUCCESS'})\` 执行后，新的 state 直接覆盖掉在 Fiber 树上挂载的旧节点状态，通过简单的 Object.is 对比，极快地决定出应该只渲染那一部分界面。\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport React from 'react';
+
+// 💡 可区分联合体：status 是钥匙，它决定了对象里能存什么数据
+type AuthState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; token: string }
+  | { status: 'error'; error: string };
+
+// 💡 reducer 仅允许你触发合法的状态变迁，比如从 FETCH 就只能走向 loading
+function authReducer(
+  state: AuthState,
+  action: 
+    | { type: 'FETCH' }
+    | { type: 'SUCCESS'; token: string }
+    | { type: 'ERROR'; error: string }
+): AuthState {
+  switch (action.type) {
+    case 'FETCH':
+      return { status: 'loading' };
+    case 'SUCCESS':
+      // 💡 此处 TypeScript 要求你必须提供 token，不可能漏掉
+      return { status: 'success', token: action.token };
+    case 'ERROR':
+      return { status: 'error', error: action.error };
+    default:
+      return state;
+  }
+}
+
+// 在组件中使用案例：
+export function useAuthMachine() {
+  const [state, dispatch] = React.useReducer(authReducer, { status: 'idle' });
+  // dispatch({ type: 'SUCCESS', token: 'ey...' })
+  return { state, dispatch };
+}
+\n\`\`\``,
         targetCode: `import React from 'react';\n\n// 💡 可区分联合体：status 是钥匙，它决定了对象里能存什么数据\ntype AuthState =\n  | { status: 'idle' }\n  | { status: 'loading' }\n  | { status: 'success'; token: string }\n  | { status: 'error'; error: string };\n\n// 💡 reducer 仅允许你触发合法的状态变迁，比如从 FETCH 就只能走向 loading\nfunction authReducer(\n  state: AuthState,\n  action: \n    | { type: 'FETCH' }\n    | { type: 'SUCCESS'; token: string }\n    | { type: 'ERROR'; error: string }\n): AuthState {\n  switch (action.type) {\n    case 'FETCH':\n      return { status: 'loading' };\n    case 'SUCCESS':\n      // 💡 此处 TypeScript 要求你必须提供 token，不可能漏掉\n      return { status: 'success', token: action.token };\n    case 'ERROR':\n      return { status: 'error', error: action.error };\n    default:\n      return state;\n  }\n}\n\n// 在组件中使用案例：\nexport function useAuthMachine() {\n  const [state, dispatch] = React.useReducer(authReducer, { status: 'idle' });\n  // dispatch({ type: 'SUCCESS', token: 'ey...' })\n  return { state, dispatch };\n}\n`,
         comments: [
             { line: 1, text: '// 💡 用判别属性收窄状态，消灭 isLoading 和 data 混用的情况' },
@@ -123,7 +235,43 @@ Token 放在前端为什么是安全的？JWT 分为三段：头部（算法说�
 
 **原子化 CSS（Tailwind）工作原理**：
 以前前端的组件库用的是 BEM 规范或者 CSS-in-JS。当我们在这拼凑出了 \`class="px-3 py-2 bg-blue-500 rounded"\` 时，为什么这些样式文件不仅不卡，还能在生产环境极小？
-Vite 在打包挂载 Tailwind 引擎时，会在整个项目进行一次正则扫描。它扫描出了你在所有 TSX 文件中所用到的类名，然后只从其自带的数万类的庞大图集中提取你写了的这几个类注入生产 \`styles.css\`。所以，**绝对不能在这里进行字符串拼接式的动态类名（如 \`bg-\${color}-500\`）**，这会导致扫描器找不到完整的词根而过滤掉该央行的 CSS。此方案使用 Record 的完全显式的映射才是正道。`,
+Vite 在打包挂载 Tailwind 引擎时，会在整个项目进行一次正则扫描。它扫描出了你在所有 TSX 文件中所用到的类名，然后只从其自带的数万类的庞大图集中提取你写了的这几个类注入生产 \`styles.css\`。所以，**绝对不能在这里进行字符串拼接式的动态类名（如 \`bg-\${color}-500\`）**，这会导致扫描器找不到完整的词根而过滤掉该央行的 CSS。此方案使用 Record 的完全显式的映射才是正道。\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport React from 'react';
+
+// 💡 只有这三种变体是被允许的，其他拼写错误在编码阶段就会告警
+type ButtonVariant = 'primary' | 'secondary' | 'danger';
+type ButtonSize = 'sm' | 'md' | 'lg';
+
+// 💡 继承原生 button 的所有属性（比如 type, disabled），无需重复声明
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant: ButtonVariant;
+  size: ButtonSize;
+}
+
+// 💡 使用 Record<K, V> 映射，确保你为每一种变体都提供了相应的 CSS 类
+const sizeClasses: Record<ButtonSize, string> = {
+  sm: 'px-3 py-1.5 text-sm',
+  md: 'px-4 py-2 text-base',
+  lg: 'px-6 py-3 text-lg',
+};
+
+const variantClasses: Record<ButtonVariant, string> = {
+  primary: 'bg-[#4285F4] text-white hover:bg-blue-700',
+  secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+  danger: 'bg-red-600 text-white hover:bg-red-700',
+};
+
+export function Button({ variant, size, children, className, ...rest }: ButtonProps) {
+  return (
+    <button
+      // 💡 解构原生属性并拼接核心样式
+      className={\`font-medium transition-colors rounded-lg \${sizeClasses[size]} \${variantClasses[variant]} \${className || ''}\`}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+\n\`\`\``,
         targetCode: `import React from 'react';\n\n// 💡 只有这三种变体是被允许的，其他拼写错误在编码阶段就会告警\ntype ButtonVariant = 'primary' | 'secondary' | 'danger';\ntype ButtonSize = 'sm' | 'md' | 'lg';\n\n// 💡 继承原生 button 的所有属性（比如 type, disabled），无需重复声明\ninterface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {\n  variant: ButtonVariant;\n  size: ButtonSize;\n}\n\n// 💡 使用 Record<K, V> 映射，确保你为每一种变体都提供了相应的 CSS 类\nconst sizeClasses: Record<ButtonSize, string> = {\n  sm: 'px-3 py-1.5 text-sm',\n  md: 'px-4 py-2 text-base',\n  lg: 'px-6 py-3 text-lg',\n};\n\nconst variantClasses: Record<ButtonVariant, string> = {\n  primary: 'bg-[#4285F4] text-white hover:bg-blue-700',\n  secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200',\n  danger: 'bg-red-600 text-white hover:bg-red-700',\n};\n\nexport function Button({ variant, size, children, className, ...rest }: ButtonProps) {\n  return (\n    <button\n      // 💡 解构原生属性并拼接核心样式\n      className={\`font-medium transition-colors rounded-lg \${sizeClasses[size]} \${variantClasses[variant]} \${className || ''}\`}\n      {...rest}\n    >\n      {children}\n    </button>\n  );\n}\n`,
         comments: [
             { line: 3, text: '// 💡 在开发IDE中能获得自动提示' },
@@ -156,7 +304,47 @@ React 不是什么魔法，它背后依然是那几行被 C++ 编成机器码在
 此时调和器 (Reconciler) 将老树与新树进行两层树级别比对这被成为 **Diffing（求异算法）**。这种操作看似昂贵但它因为不触及真实 HTML，因此能承受海量 O(N) 以内的树递归。当 Diff 得到变更清单 (Patches) 时，才通过底层绑定批量注入物理 DOM，引发 GPU 参与的 \`Repaint（重绘）\` 与 \`Reflow（回流位置重拍）\`。
 使用 \`React.memo\` 是极为高明的“早退”思想：一旦浅指针比较判断一样，连组件函数这个逻辑代码根本都不执行，甚至将极其耗 CPU 周期的 Diffing 获取新旧老树这个根源掐掉。此防护为构建高密度流媒体应用的前提。
 
-**注意坑点：** 如果你父组件中是通过内联如 \`onLike={() => ... }\` 的方式抛给 memo 组件的，因为每次父级重绘都会重新生成一次内存处于新位置的函数对象地址，它将直接摧毁你所有的 memo 判断屏障造成优化失灵（后文模块中的 \`useCallback\` 专治此病）。`,
+**注意坑点：** 如果你父组件中是通过内联如 \`onLike={() => ... }\` 的方式抛给 memo 组件的，因为每次父级重绘都会重新生成一次内存处于新位置的函数对象地址，它将直接摧毁你所有的 memo 判断屏障造成优化失灵（后文模块中的 \`useCallback\` 专治此病）。\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport React from 'react';
+
+interface Video {
+  id: string;
+  title: string;
+  author: string;
+  views: number;
+  thumbnail: string;
+}
+
+interface VideoCardProps {
+  video: Video;
+  onLike: (id: string) => void;
+}
+
+// 💡 React.memo 告诉引擎：如果传进来的 video 和 onLike 的内存指针没有变，就不要重刷我的老 DOM
+export const VideoCard = React.memo(function VideoCard({ video, onLike }: VideoCardProps) {
+  // 💡 模拟一下昂贵的渲染逻辑开销
+  console.log('Rendering VideoCard:', video.id);
+
+  return (
+    <div className="flex flex-col rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+      <img src={video.thumbnail} alt={video.title} className="h-48 w-full object-cover" loading="lazy" />
+      <div className="p-4">
+        <h3 className="font-bold text-gray-800 line-clamp-2">{video.title}</h3>
+        <div className="mt-2 flex justify-between items-center text-sm text-gray-500">
+          <span>@{video.author}</span>
+          <span>{(video.views / 1000).toFixed(1)}K views</span>
+        </div>
+        <button 
+          // 💡 点击向上传递事件，交由父组件调用后端API
+          onClick={() => onLike(video.id)}
+          className="mt-4 w-full py-2 bg-[#E8F0FE] text-[#1967D2] font-medium rounded-lg hover:bg-blue-100"
+        >
+          点赞支持
+        </button>
+      </div>
+    </div>
+  );
+});
+\n\`\`\``,
         targetCode: `import React from 'react';\n\ninterface Video {\n  id: string;\n  title: string;\n  author: string;\n  views: number;\n  thumbnail: string;\n}\n\ninterface VideoCardProps {\n  video: Video;\n  onLike: (id: string) => void;\n}\n\n// 💡 React.memo 告诉引擎：如果传进来的 video 和 onLike 的内存指针没有变，就不要重刷我的老 DOM\nexport const VideoCard = React.memo(function VideoCard({ video, onLike }: VideoCardProps) {\n  // 💡 模拟一下昂贵的渲染逻辑开销\n  console.log('Rendering VideoCard:', video.id);\n\n  return (\n    <div className="flex flex-col rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">\n      <img src={video.thumbnail} alt={video.title} className="h-48 w-full object-cover" loading="lazy" />\n      <div className="p-4">\n        <h3 className="font-bold text-gray-800 line-clamp-2">{video.title}</h3>\n        <div className="mt-2 flex justify-between items-center text-sm text-gray-500">\n          <span>@{video.author}</span>\n          <span>{(video.views / 1000).toFixed(1)}K views</span>\n        </div>\n        <button \n          // 💡 点击向上传递事件，交由父组件调用后端API\n          onClick={() => onLike(video.id)}\n          className="mt-4 w-full py-2 bg-[#E8F0FE] text-[#1967D2] font-medium rounded-lg hover:bg-blue-100"\n        >\n          点赞支持\n        </button>\n      </div>\n    </div>\n  );\n});\n`,
         comments: [
             { line: 15, text: '// 💡 React.memo 拦截不必要的 Diff 比对' },
@@ -188,7 +376,43 @@ React 不是什么魔法，它背后依然是那几行被 C++ 编成机器码在
 
 **\`useRef\`（盒子）为什么可以解决问题？**
 \`useRef\` 构建的数据存储它并不处在此组件这层空间里。它是被安置到 React 控制的最底层的由 Fiber 管理的那个被持久驻扎在堆里的固定内存位置上（即盒子的本质是一个永远不换物理门牌的 Mutable 对象 \`{ current: ... }\`）。
-当外挂 \`Observer\` 进行调用时，他并不直接调某个版本的闭包实体 \`A\`。它找到 \`box\` 这个永远定格位置的外壳，然后再往里边一看 —— \`{ current: 最新生成的 C }\`。至此在每一次 Render 它都会实时通过 \`callbackRef.current = callback\` 用最最崭新的内容把老内容在深处挤压填没替换，保证引用指针如钢丝绳般不掉包。巧妙化解这个死扣问题。`,
+当外挂 \`Observer\` 进行调用时，他并不直接调某个版本的闭包实体 \`A\`。它找到 \`box\` 这个永远定格位置的外壳，然后再往里边一看 —— \`{ current: 最新生成的 C }\`。至此在每一次 Render 它都会实时通过 \`callbackRef.current = callback\` 用最最崭新的内容把老内容在深处挤压填没替换，保证引用指针如钢丝绳般不掉包。巧妙化解这个死扣问题。\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport { useEffect, useRef } from 'react';
+
+// 💡 这个 Hook 的作用是：当你给它的元素露脸（相交）时，它就执行你的 callback。
+export function useIntersectionObserver(
+  callback: () => void,
+  options?: IntersectionObserverInit
+) {
+  const targetRef = useRef<HTMLDivElement>(null);
+  
+  // 💡 useRef(callback) - [破解闭包陷阱的核心] 
+  // 由于 callback 在父组件内可能会频繁重现（比如带有 page 状态），
+  // 这个 ref 会保证 observer.observe 内触发的始终是最新的逻辑引用。
+  const callbackRef = useRef(callback);
+  
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
+  useEffect(() => {
+    const target = targetRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      // 💡 在交叉且回调存在时执行动作
+      if (entry.isIntersecting) {
+        callbackRef.current();
+      }
+    }, { threshold: 0.1, ...options });
+
+    observer.observe(target);
+    // 💡 记得清理监听器
+    return () => observer.disconnect();
+  }, [options]);
+
+  return targetRef;
+}
+\n\`\`\``,
         targetCode: `import { useEffect, useRef } from 'react';\n\n// 💡 这个 Hook 的作用是：当你给它的元素露脸（相交）时，它就执行你的 callback。\nexport function useIntersectionObserver(\n  callback: () => void,\n  options?: IntersectionObserverInit\n) {\n  const targetRef = useRef<HTMLDivElement>(null);\n  \n  // 💡 useRef(callback) - [破解闭包陷阱的核心] \n  // 由于 callback 在父组件内可能会频繁重现（比如带有 page 状态），\n  // 这个 ref 会保证 observer.observe 内触发的始终是最新的逻辑引用。\n  const callbackRef = useRef(callback);\n  \n  useEffect(() => {\n    callbackRef.current = callback;\n  }, [callback]);\n\n  useEffect(() => {\n    const target = targetRef.current;\n    if (!target) return;\n\n    const observer = new IntersectionObserver(([entry]) => {\n      // 💡 在交叉且回调存在时执行动作\n      if (entry.isIntersecting) {\n        callbackRef.current();\n      }\n    }, { threshold: 0.1, ...options });\n\n    observer.observe(target);\n    // 💡 记得清理监听器\n    return () => observer.disconnect();\n  }, [options]);\n\n  return targetRef;\n}\n`,
         comments: [
             { line: 3, text: '// 💡 封装 DOM Observer 使得业务层只关心 "露脸了该干嘛"' },
@@ -220,7 +444,47 @@ Node.js 以及 V8 浏览器对 JS 实现的一个非常基础而牢固的枷锁�
 
 **Actor 模型的孤岛双雄（Web Worker）**：
 浏览器环境并不是无情只有一颗内核，它可以分离开生起一座完全独立平行于你网页的主脑并且跑在你真正的现代多核处理器的**旁侧另外核心上**的机制。\`Worker\` 执行的，其实是传统并发计算机语言中很古老且辉煌的一种无锁解法叫做 **Actor 模型**。
-该模型规定：这两个宇宙，任何事情不论它是计算多大的海量星系，都不可以去直接读或者修改对方里面的共享的数据。这就天生解决了并发写入时需要加各种复杂的竞争锁从而导致系统死锁的难题。他们如果要沟通只能怎么做？把这些大数据全都丢在密封容器里（也就是序列化后的 \`MessageEvent\`），通过一管专接两台微波接收器的信箱使用唯一的原语 \`postMessage\` 进行扔，和靠挂在监听 \`onmessage\` 两端通过监听把信取出来拿走。这一去一回不仅是物理隔离更是计算资源降维打击的神器。`,
+该模型规定：这两个宇宙，任何事情不论它是计算多大的海量星系，都不可以去直接读或者修改对方里面的共享的数据。这就天生解决了并发写入时需要加各种复杂的竞争锁从而导致系统死锁的难题。他们如果要沟通只能怎么做？把这些大数据全都丢在密封容器里（也就是序列化后的 \`MessageEvent\`），通过一管专接两台微波接收器的信箱使用唯一的原语 \`postMessage\` 进行扔，和靠挂在监听 \`onmessage\` 两端通过监听把信取出来拿走。这一去一回不仅是物理隔离更是计算资源降维打击的神器。\n\n## 📝 完整参考代码\n\`\`\`typescript\n// 💡 Worker 的内核逻辑必须是一个纯净的世界，不能访问 DOM 和 window！
+const sortWorkerStr = \`
+  self.onmessage = function(e) {
+    const { videos, sortBy } = e.data;
+    // 💡 注意：sort 会在原地修改数组，我们解构一份防副作用
+    const sorted = [...videos].sort((a, b) => {
+      if (sortBy === 'views') return b.views - a.views;
+      return a.title.localeCompare(b.title);
+    });
+    // 💡 计算完后原路发送回去
+    self.postMessage(sorted);
+  };
+\`;
+
+function createWorker() {
+  const blob = new Blob([sortWorkerStr], { type: 'application/javascript' });
+  return new Worker(URL.createObjectURL(blob));
+}
+
+import { useState, useEffect, useRef } from 'react';
+
+export function useWorkerSort(videos: any[], sortBy: string) {
+  const [sorted, setSorted] = useState(videos);
+  const workerRef = useRef<Worker | null>(null);
+
+  // 💡 Init 初始化
+  useEffect(() => {
+    workerRef.current = createWorker();
+    workerRef.current.onmessage = (e) => setSorted(e.data);
+    // 💡 组件销毁时掐断线程电源
+    return () => workerRef.current?.terminate();
+  }, []);
+
+  // 💡 每当列表或排序条件改变，发送任务给多线程后台处理
+  useEffect(() => {
+    workerRef.current?.postMessage({ videos, sortBy });
+  }, [videos, sortBy]);
+
+  return sorted;
+}
+\n\`\`\``,
         targetCode: `// 💡 Worker 的内核逻辑必须是一个纯净的世界，不能访问 DOM 和 window！\nconst sortWorkerStr = \`\n  self.onmessage = function(e) {\n    const { videos, sortBy } = e.data;\n    // 💡 注意：sort 会在原地修改数组，我们解构一份防副作用\n    const sorted = [...videos].sort((a, b) => {\n      if (sortBy === 'views') return b.views - a.views;\n      return a.title.localeCompare(b.title);\n    });\n    // 💡 计算完后原路发送回去\n    self.postMessage(sorted);\n  };\n\`;\n\nfunction createWorker() {\n  const blob = new Blob([sortWorkerStr], { type: 'application/javascript' });\n  return new Worker(URL.createObjectURL(blob));\n}\n\nimport { useState, useEffect, useRef } from 'react';\n\nexport function useWorkerSort(videos: any[], sortBy: string) {\n  const [sorted, setSorted] = useState(videos);\n  const workerRef = useRef<Worker | null>(null);\n\n  // 💡 Init 初始化\n  useEffect(() => {\n    workerRef.current = createWorker();\n    workerRef.current.onmessage = (e) => setSorted(e.data);\n    // 💡 组件销毁时掐断线程电源\n    return () => workerRef.current?.terminate();\n  }, []);\n\n  // 💡 每当列表或排序条件改变，发送任务给多线程后台处理\n  useEffect(() => {\n    workerRef.current?.postMessage({ videos, sortBy });\n  }, [videos, sortBy]);\n\n  return sorted;\n}\n`,
         comments: [
             { line: 2, text: '// 💡 在子线程中执行高消耗排序' },
@@ -247,7 +511,59 @@ Node.js 以及 V8 浏览器对 JS 实现的一个非常基础而牢固的枷锁�
 ### 🧠 底层原理剖析：React 执行的瀑布分流与挂载
 **单向数据流机制（One-Way Data Flow）**：
 为什么我们要把这几十条短视频列表统一以 \`useState\` 维护在最高的层级而不是塞进底层的一个小小的区域内管理？因为组件的形态往往比我们认知的复杂百倍甚至出现两个完全没有隶属和子父关系的页面都需要访问同一批次此数据以展现不同表象状态（如同一个右下角的迷你缩约提示版面）。
-这其中蕴含了 React 这个生态极其固执甚至可以说极为神圣哲学理念：所有的源头流动只能由高处顺沿着重力往下作为 \`props\` （不可变参数）奔波到子代深远大海，不逆转！这种如树须枝桠脉络散播的方式能够绝对保障数据产生修改引发变更灾难时，通过简单的源头溯源在几秒之内用 \`(prev) => [...prev, ...newVideos]\` 在原点找出。如果违背这个将引起犹如迷宫大反叛的混乱之主，使得 Bug 不可捕获产生极其可怕的暗流变异。这也为将来采用深水区大型基建红海：如 Zustand 给出了必然前置引路。`,
+这其中蕴含了 React 这个生态极其固执甚至可以说极为神圣哲学理念：所有的源头流动只能由高处顺沿着重力往下作为 \`props\` （不可变参数）奔波到子代深远大海，不逆转！这种如树须枝桠脉络散播的方式能够绝对保障数据产生修改引发变更灾难时，通过简单的源头溯源在几秒之内用 \`(prev) => [...prev, ...newVideos]\` 在原点找出。如果违背这个将引起犹如迷宫大反叛的混乱之主，使得 Bug 不可捕获产生极其可怕的暗流变异。这也为将来采用深水区大型基建红海：如 Zustand 给出了必然前置引路。\n\n## 📝 完整参考代码\n\`\`\`typescript\nimport React, { useState, useCallback } from 'react';
+
+// 💡 为 Monaco 环境声明缺失模块，实际项目不需要写这几行
+declare module '@/hooks/useIntersectionObserver' { export function useIntersectionObserver(cb: any): any; }
+declare module '@/components/VideoCard' { export const VideoCard: any; }
+
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { VideoCard } from '@/components/VideoCard';
+
+export default function InfiniteSaaSFeed() {
+  const [videos, setVideos] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  // 💡 分页逻辑
+  const fetchMore = useCallback(async () => {
+    if (loading) return;
+    setLoading(true);
+    // 模拟一下从 Spring Boot API 拿数据
+    // const res = await fetch(\`/api/videos?page=\${page}&limit=10\`);
+    // const newVideos = await res.json();
+    const newVideos = [{ id: String(Date.now()), title: 'New Hook Tutorial', author: 'CodeForge', views: 50000, thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=300&auto=format&fit=crop' }];
+    
+    setVideos(prev => [...prev, ...newVideos]);
+    setPage(p => p + 1);
+    setLoading(false);
+  }, [page, loading]);
+
+  // 💡 挂接无限滚动触发器
+  const sentinelRef = useIntersectionObserver(fetchMore);
+
+  return (
+    <div className="max-w-4xl mx-auto p-8">
+      <h1 className="text-3xl font-extrabold mb-8 text-gray-900 border-b pb-4">Trending Tech Videos</h1>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {videos.map(v => (
+          <VideoCard 
+            key={v.id} 
+            video={v} 
+            onLike={(id: string) => console.log('Liking video ID and pushing to Kafka: ', id)} 
+          />
+        ))}
+      </div>
+
+      {/* 💡 滚动底部的哨兵元素：它隐藏在那里，露出视口就代表到了底部 */}
+      <div ref={sentinelRef} className="h-16 flex items-center justify-center mt-6">
+        {loading && <div className="text-[#4285F4] animate-pulse">Loading next chunk...</div>}
+      </div>
+    </div>
+  );
+}
+\n\`\`\``,
         targetCode: `import React, { useState, useCallback } from 'react';\n\n// 💡 为 Monaco 环境声明缺失模块，实际项目不需要写这几行\ndeclare module '@/hooks/useIntersectionObserver' { export function useIntersectionObserver(cb: any): any; }\ndeclare module '@/components/VideoCard' { export const VideoCard: any; }\n\nimport { useIntersectionObserver } from '@/hooks/useIntersectionObserver';\nimport { VideoCard } from '@/components/VideoCard';\n\nexport default function InfiniteSaaSFeed() {\n  const [videos, setVideos] = useState<any[]>([]);\n  const [page, setPage] = useState(1);\n  const [loading, setLoading] = useState(false);\n\n  // 💡 分页逻辑\n  const fetchMore = useCallback(async () => {\n    if (loading) return;\n    setLoading(true);\n    // 模拟一下从 Spring Boot API 拿数据\n    // const res = await fetch(\`/api/videos?page=\${page}&limit=10\`);\n    // const newVideos = await res.json();\n    const newVideos = [{ id: String(Date.now()), title: 'New Hook Tutorial', author: 'CodeForge', views: 50000, thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=300&auto=format&fit=crop' }];\n    \n    setVideos(prev => [...prev, ...newVideos]);\n    setPage(p => p + 1);\n    setLoading(false);\n  }, [page, loading]);\n\n  // 💡 挂接无限滚动触发器\n  const sentinelRef = useIntersectionObserver(fetchMore);\n\n  return (\n    <div className="max-w-4xl mx-auto p-8">\n      <h1 className="text-3xl font-extrabold mb-8 text-gray-900 border-b pb-4">Trending Tech Videos</h1>\n      \n      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">\n        {videos.map(v => (\n          <VideoCard \n            key={v.id} \n            video={v} \n            onLike={(id: string) => console.log('Liking video ID and pushing to Kafka: ', id)} \n          />\n        ))}\n      </div>\n\n      {/* 💡 滚动底部的哨兵元素：它隐藏在那里，露出视口就代表到了底部 */}\n      <div ref={sentinelRef} className="h-16 flex items-center justify-center mt-6">\n        {loading && <div className="text-[#4285F4] animate-pulse">Loading next chunk...</div>}\n      </div>\n    </div>\n  );\n}\n`,
         comments: [
             { line: 10, text: '// 💡 Fetch 数据，必须 useCallback 防闭包变动' },
