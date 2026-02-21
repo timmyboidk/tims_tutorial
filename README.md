@@ -46,9 +46,6 @@
    ```
    看到 `Server is running statically on http://0.0.0.0:80` 即表示启动成功。
 
-### 关于课程 1.2 代码重置
-如果你发现课程 1.2 已经有代码且无法删除，我已经将其 `startingCode` 清空。请尝试刷新页面或重新进入 IDE 视图，如果是 Docker 环境，请确保重新构建：`docker compose up -d --build`。
-
 ### 如何停止服务？
 当你学习完毕，想要释放电脑内存时：
 ```bash

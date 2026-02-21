@@ -16,25 +16,17 @@ RUN npm run build
 # =========================================================
 
 # 💡 阶段 2：生产服务阶段 (production)
-# 使用极小体积的 Node alpine 服务，不仅托管打包出来的静态文件，还内置 Express API 路由来实现持久化功能！
-FROM node:20-alpine
-
-WORKDIR /app
+# 使用 Nginx 来托管打包出来的静态文件，并且进行 API 代理
+FROM nginx:alpine
 
 # 从 builder 拷贝构建好的完全静态页面
-COPY --from=builder /app/dist ./dist
-# 拷贝 Express 的核心支撑文件和依赖
-COPY package.json package-lock.json ./
-RUN npm install --omit=dev
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 拷贝后端代码层
-COPY server.ts ./
-COPY api ./api
+# 拷贝 Nginx 配置文件
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# (由于取消了 Nginx，需要移除 nginx.conf 的相关拷贝)
-
-# 💡 暴露 80 端口给外部映射（注意 server.js 默认监听 80）
+# 💡 暴露 80 端口给外部映射
 EXPOSE 80
 
-# 💡 启动 Express 服务
-CMD ["npx", "tsx", "server.ts"]
+# 💡 启动 Nginx 服务
+CMD ["nginx", "-g", "daemon off;"]
