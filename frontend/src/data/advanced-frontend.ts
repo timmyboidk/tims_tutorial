@@ -179,7 +179,6 @@ export default async function HelpCenterPage() {
     title: '全双工战线：WebSockets 实时推送',
     category: '进阶：高级前端架构', track: '前端架构',
     moduleNumber: 6, lessonNumber: 4, language: 'typescript',
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# WebSocket 双全工长连接通道架构
 

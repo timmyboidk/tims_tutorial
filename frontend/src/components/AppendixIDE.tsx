@@ -113,7 +113,7 @@ export default function AppendixIDE({ onBack }: AppendixIDEProps) {
                                 <SyntaxHighlighter
                                     language={selectedFile.language || 'text'}
                                     style={vs}
-                                    customStyle={{ margin: 0, padding: '1.5rem', fontSize: '14px', minHeight: '100%', backgroundColor: '#ffffff' }}
+                                    customStyle={{ margin: 0, padding: '1.5rem', fontSize: '18px', fontFamily: '"JetBrains Mono", monospace', fontWeight: 'normal', lineHeight: '1.6', minHeight: '100%', backgroundColor: '#ffffff' }}
                                     showLineNumbers={true}
                                 >
                                     {selectedFile.content || ''}

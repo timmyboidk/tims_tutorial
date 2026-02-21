@@ -6,7 +6,6 @@ export const advancedBackend: Lesson[] = [
         title: 'Spring Security OAuth2.0 与社交登录',
         category: '进阶：系统架构与网关安全', track: '后端工程',
         moduleNumber: 7, lessonNumber: 1, language: 'java',
-        illustrationUrl: '/illustrations/backend_microservices.png',
         startingCode: '', targetCode: '',
         instructions: `# 引入 OAuth2.0 与 OIDC 分布式授权
 
@@ -154,7 +153,6 @@ public class RateLimitAspect {
         title: 'Spring Cloud Gateway 微服务网关',
         category: '进阶：系统架构与网关安全', track: '后端工程',
         moduleNumber: 7, lessonNumber: 3, language: 'java',
-        illustrationUrl: '/illustrations/backend_microservices.png',
         startingCode: '', targetCode: '',
         instructions: `# 构建微服务边界基石：Spring Cloud Gateway
 

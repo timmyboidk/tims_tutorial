@@ -59,7 +59,6 @@ export default async function VideoPage({ params }: { params: { id: string } }) 
     title: '课程 3.2：React Server Components',
     category: '模块3：Next.js 与服务端渲染', track: '前端架构',
     moduleNumber: 3, lessonNumber: 2,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# React Server Components (RSC) 重构渲染流水线
 
@@ -117,7 +116,6 @@ RSC 的范式突破在于：它的作用域只存在于后端的执行堆。无�
     title: '课程 3.3：岛屿架构与乐观更新',
     category: '模块3：Next.js 与服务端渲染', track: '前端架构',
     moduleNumber: 3, lessonNumber: 3,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 岛屿架构 (Islands Architecture) 与客户端挂载机制
 
@@ -177,7 +175,6 @@ Next.js 使用一套非常规的树枝依赖边界切割协议约束层结构。
     title: '课程 4.1：构建看板布局',
     category: '模块4：SaaS 洞察看板', track: '前端架构',
     moduleNumber: 4, lessonNumber: 1,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 掌握 CSS Grid 定位技巧构建大屏体系
 
@@ -241,7 +238,6 @@ export default function DashboardGrid() {
     title: '课程 4.2：可视化实时数据',
     category: '模块4：SaaS 洞察看板', track: '前端架构',
     moduleNumber: 4, lessonNumber: 2,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 规避过度依赖：构建原生 SVG 可视化映射
 
@@ -309,7 +305,6 @@ export function Sparkline({ data, color = '#2563eb' }: LineChartProps) {
     title: '课程 5.1：引入 Axios 拦截器',
     category: '模块5：微前端网关与安全拦截', track: '前端架构',
     moduleNumber: 5, lessonNumber: 1,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 构建健壮可控的 Axios 全面拦截关隘
 
@@ -368,7 +363,6 @@ Ajax 的发展演进是由原生繁复杂错纠缠不清的 \`XMLHttpRequest(XHR
     title: '课程 5.2：实战集成与安全探讨',
     category: '模块5：微前端网关与安全拦截', track: '前端架构',
     moduleNumber: 5, lessonNumber: 2,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 请求隔离应用终端交融聚合系统实战演练
 

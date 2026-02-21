@@ -37,7 +37,6 @@ Spring 容器在启动时，主要经历两个阶段：
         title: '课程 1.2：三层架构与 MyBatis 动态持久化',
         category: '模块1：核心架构与容器启动', track: '后端工程',
         moduleNumber: 1, lessonNumber: 2, language: 'java',
-        illustrationUrl: '/illustrations/backend_microservices.png',
         startingCode: '',
         instructions: `# 经典三层架构与 MyBatis 持久化机制
 

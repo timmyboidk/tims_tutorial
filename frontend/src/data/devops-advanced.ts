@@ -6,7 +6,6 @@ export const devopsAdvanced: Lesson[] = [
     title: 'JUnit 与 Testcontainers 容器化测试',
     category: '进阶：DevOps 与工程化', track: 'DevOps & Cloud Native',
     moduleNumber: 8, lessonNumber: 1, language: 'java',
-        illustrationUrl: '/illustrations/devops_deployment.png',
     startingCode: '', targetCode: '',
     instructions: `# 引入 Testcontainers 构建可重现的容器级集成测试
 
@@ -127,7 +126,6 @@ describe('InteractiveLikeButton 交互范式行为集测', () => {
     title: '持续集成 (GitHub Actions) 自动化流',
     category: '进阶：DevOps 与工程化', track: 'DevOps & Cloud Native',
     moduleNumber: 8, lessonNumber: 3, language: 'yaml',
-        illustrationUrl: '/illustrations/devops_deployment.png',
     startingCode: '', targetCode: '',
     instructions: `# 落地 GitHub Actions 持续集成准入自动化门限
 

@@ -6,7 +6,6 @@ export const frontendM1M2: Lesson[] = [
     title: '课程 1.1：配置 SaaS 项目的 React 外壳',
     category: '模块1：现代基础架构与权限', track: '前端架构',
     moduleNumber: 1, lessonNumber: 1,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 配置 SaaS 项目的 React 外壳与代理机制
 
@@ -127,7 +126,6 @@ DOM 中的 \`React.FormEvent\` 代表了合成事件体系。由于各个浏览�
     title: '课程 1.3：处理认证的异步状态',
     category: '模块1：现代基础架构与权限', track: '前端架构',
     moduleNumber: 1, lessonNumber: 3,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 利用可区分联合体处理异步状态
 
@@ -189,7 +187,6 @@ export function useAuthMachine() {
     title: '实战：强类型组件',
     category: '模块1：现代基础架构与权限', track: '前端架构',
     moduleNumber: 1, lessonNumber: 4,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 实战：开发强类型 UI 组件
 
@@ -367,7 +364,6 @@ Hooks 的函数体在每一次执行时，由于 JS 词法作用域锁定的规�
     title: '课程 2.3：使用 Web Worker',
     category: '模块2：组件架构与视频流', track: '前端架构',
     moduleNumber: 2, lessonNumber: 3,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 启用 Web Worker 解除单线程计算封锁
 
@@ -430,7 +426,6 @@ export function useWorkerSort(videos: any[], sortBy: string) {
     title: '实战：组装无限列表业务闭环',
     category: '模块2：组件架构与视频流', track: '前端架构',
     moduleNumber: 2, lessonNumber: 4,
-        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 实战：微服务型无线端滚动组件组构闭环
 

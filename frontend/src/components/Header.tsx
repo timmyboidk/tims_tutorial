@@ -11,35 +11,36 @@ interface HeaderProps {
 export default function Header({ lessonTitle, onBackToRoadmap }: HeaderProps) {
 
     return (
-        <header className="flex items-center justify-between px-6 h-16 bg-[#282A35] shrink-0 z-10 relative">
+        <header className="flex items-center justify-between px-6 h-16 bg-white border-b border-[#DADCE0] shrink-0 z-10 relative">
             {/* Branding */}
             <div className="flex items-center gap-4">
                 {onBackToRoadmap && (
                     <button
                         onClick={onBackToRoadmap}
-                        className="flex items-center justify-center text-white hover:text-white hover:bg-[#04AA6D] px-4 py-2 rounded transition-colors text-sm font-semibold mr-2"
+                        className="flex items-center justify-center text-[#5F6368] hover:text-[#202124] hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors text-sm font-medium mr-2"
                         title="返回路线图"
                     >
-                        ← HOME
+                        ← 返回路线图
                     </button>
                 )}
-                <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold text-white tracking-widest">
-                        CODE<span className="text-[#04AA6D]">FORGE</span>
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#4285F4] flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">C</span>
+                    </div>
+                    <span className="text-xl font-semibold text-[#5F6368] tracking-tight">
+                        Code<span className="text-[#4285F4]">Forge</span>
                     </span>
-                    <span className="text-gray-400 mx-2 font-light">|</span>
-                    <span className="text-sm text-gray-300 font-medium tracking-wide">{lessonTitle}</span>
+                    <span className="text-[#DADCE0] mx-2">|</span>
+                    <span className="text-[15px] text-[#5F6368] font-medium">{lessonTitle}</span>
                 </div>
             </div>
 
             {/* Mock Right Side Options */}
-            <div className="hidden md:flex items-center gap-1">
-                <button className="text-white hover:bg-black/30 px-3 py-2 rounded text-sm transition-colors">TUTORIALS</button>
-                <button className="text-white hover:bg-black/30 px-3 py-2 rounded text-sm transition-colors">EXERCISES</button>
-                <button className="text-white hover:bg-black/30 px-3 py-2 rounded text-sm transition-colors">CERTIFICATES</button>
-                <div className="ml-4 flex items-center gap-2">
-                    <button className="bg-[#04AA6D] hover:bg-[#059862] text-white px-5 py-2 rounded-full font-bold text-sm transition-colors">Pro</button>
-                    <button className="bg-[#FFF4A3] hover:bg-[#EBE094] text-black px-5 py-2 rounded-full font-bold text-sm transition-colors">Log in</button>
+            <div className="hidden md:flex items-center gap-3">
+                <button className="text-[#5F6368] hover:bg-gray-100 px-3 py-2 rounded-md font-medium text-sm transition-colors">课程文档</button>
+                <div className="w-px h-5 bg-[#DADCE0] mx-1"></div>
+                <div className="w-8 h-8 rounded-full bg-[#1A73E8] flex items-center justify-center text-white text-sm font-bold shadow-sm cursor-pointer">
+                    T
                 </div>
             </div>
 
