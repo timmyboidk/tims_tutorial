@@ -6,6 +6,7 @@ export const frontendM1M2: Lesson[] = [
     title: '课程 1.1：配置 SaaS 项目的 React 外壳',
     category: '模块1：现代基础架构与权限', track: '前端架构',
     moduleNumber: 1, lessonNumber: 1,
+        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 配置 SaaS 项目的 React 外壳与代理机制
 
@@ -55,6 +56,7 @@ CORS 跨域限制是宿主环境（浏览器）为了防止 CSRF（跨站请求�
     title: '课程 1.2：类型严格的 JWT 登录表单',
     category: '模块1：现代基础架构与权限', track: '前端架构',
     moduleNumber: 1, lessonNumber: 2,
+        illustrationUrl: '/illustrations/w3_jwt_auth_1771635695409.png',
     startingCode: '', targetCode: '',
     instructions: `# 开发类型严格的 JWT 登录表单
 
@@ -125,6 +127,7 @@ DOM 中的 \`React.FormEvent\` 代表了合成事件体系。由于各个浏览�
     title: '课程 1.3：处理认证的异步状态',
     category: '模块1：现代基础架构与权限', track: '前端架构',
     moduleNumber: 1, lessonNumber: 3,
+        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 利用可区分联合体处理异步状态
 
@@ -186,6 +189,7 @@ export function useAuthMachine() {
     title: '实战：强类型组件',
     category: '模块1：现代基础架构与权限', track: '前端架构',
     moduleNumber: 1, lessonNumber: 4,
+        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 实战：开发强类型 UI 组件
 
@@ -242,6 +246,7 @@ Tailwind 引擎完全不同于传统的运行时 CSS-in-JS (如 Styled-Component
     title: '课程 2.1：列表性能优化',
     category: '模块2：组件架构与视频流', track: '前端架构',
     moduleNumber: 2, lessonNumber: 1,
+        illustrationUrl: '/illustrations/w3_react_optimizations_1771635739563.png',
     startingCode: '', targetCode: '',
     instructions: `# React 冗余渲染优化：React.memo 陷阱突破
 
@@ -302,6 +307,7 @@ export default function VideoList({ videos }: { videos: Video[] }) {
     title: '课程 2.2：构建无限滚动 Hook',
     category: '模块2：组件架构与视频流', track: '前端架构',
     moduleNumber: 2, lessonNumber: 2,
+        illustrationUrl: '/illustrations/w3_react_hooks_flow_1771635574572.png',
     startingCode: '', targetCode: '',
     instructions: `# 获取无限加载挂钩并规避闭包状态陷阱
 
@@ -361,6 +367,7 @@ Hooks 的函数体在每一次执行时，由于 JS 词法作用域锁定的规�
     title: '课程 2.3：使用 Web Worker',
     category: '模块2：组件架构与视频流', track: '前端架构',
     moduleNumber: 2, lessonNumber: 3,
+        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 启用 Web Worker 解除单线程计算封锁
 
@@ -423,6 +430,7 @@ export function useWorkerSort(videos: any[], sortBy: string) {
     title: '实战：组装无限列表业务闭环',
     category: '模块2：组件架构与视频流', track: '前端架构',
     moduleNumber: 2, lessonNumber: 4,
+        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# 实战：微服务型无线端滚动组件组构闭环
 

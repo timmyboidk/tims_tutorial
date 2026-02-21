@@ -6,6 +6,7 @@ export const backendM4M6: Lesson[] = [
         title: '课程 4.1：微服务 Saga 跨库事务（购买会员）',
         category: '模块4：分布式事务与容错', track: '后端工程',
         moduleNumber: 4, lessonNumber: 1, language: 'java',
+        illustrationUrl: '/illustrations/w3_microservices_saga_1771635780394.png',
         startingCode: '',
         instructions: `# Saga 编排与分布式跨库事务
 
@@ -38,6 +39,7 @@ Saga 属于 BASE 理论的典型实践，它放弃了追求强一致性的锁定
         title: '课程 4.2：Resilience4j 断路器与雪崩防治',
         category: '模块4：分布式事务与容错', track: '后端工程',
         moduleNumber: 4, lessonNumber: 2, language: 'java',
+        illustrationUrl: '/illustrations/backend_microservices.png',
         startingCode: '',
         instructions: `# Resilience4j 断路器与雪崩效应防治
 
@@ -68,6 +70,7 @@ Saga 属于 BASE 理论的典型实践，它放弃了追求强一致性的锁定
         title: '课程 5.1：Micrometer 与全链路遥测追踪',
         category: '模块5：高维可观测与链路审计', track: '后端工程',
         moduleNumber: 5, lessonNumber: 1, language: 'java',
+        illustrationUrl: '/illustrations/backend_microservices.png',
         startingCode: '',
         instructions: `# 全链路分布式追踪 TraceId 遥测体系
 
@@ -97,6 +100,7 @@ Saga 属于 BASE 理论的典型实践，它放弃了追求强一致性的锁定
         title: '课程 6.1：Docker 底层核心多阶段全构建',
         category: '模块6：极致容器编排与环境脱离', track: 'DevOps & Cloud Native',
         moduleNumber: 6, lessonNumber: 1, language: 'dockerfile',
+        illustrationUrl: '/illustrations/devops_deployment.png',
         startingCode: '',
         instructions: `# 容器多阶段构建与云原生环境隔离
 

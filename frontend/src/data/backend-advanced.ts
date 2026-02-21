@@ -6,6 +6,7 @@ export const advancedBackend: Lesson[] = [
         title: 'Spring Security OAuth2.0 与社交登录',
         category: '进阶：系统架构与网关安全', track: '后端工程',
         moduleNumber: 7, lessonNumber: 1, language: 'java',
+        illustrationUrl: '/illustrations/backend_microservices.png',
         startingCode: '', targetCode: '',
         instructions: `# 引入 OAuth2.0 与 OIDC 分布式授权
 
@@ -75,6 +76,7 @@ public class SecurityConfig {
         title: 'Redis 高并发限流 (Rate Limiting)',
         category: '进阶：系统架构与网关安全', track: '后端工程',
         moduleNumber: 7, lessonNumber: 2, language: 'java',
+        illustrationUrl: '/illustrations/w3_redis_cache_1771635654039.png',
         startingCode: '', targetCode: '',
         instructions: `# 利用 Lua 脚本与 Redis 构建分布式限流引擎
 
@@ -152,6 +154,7 @@ public class RateLimitAspect {
         title: 'Spring Cloud Gateway 微服务网关',
         category: '进阶：系统架构与网关安全', track: '后端工程',
         moduleNumber: 7, lessonNumber: 3, language: 'java',
+        illustrationUrl: '/illustrations/backend_microservices.png',
         startingCode: '', targetCode: '',
         instructions: `# 构建微服务边界基石：Spring Cloud Gateway
 
@@ -223,6 +226,7 @@ Spring Cloud Gateway 直接抛置更换基底引擎底盘换上基底搭载具�
         title: 'Spring GraphQL 构建超级图谱',
         category: '进阶：系统架构与网关安全', track: '后端工程',
         moduleNumber: 7, lessonNumber: 4, language: 'java',
+        illustrationUrl: '/illustrations/w3_graphql_1771635760642.png',
         startingCode: '', targetCode: '',
         instructions: `# 构建强关联业务下的 GraphQL 组合查询态引擎
 

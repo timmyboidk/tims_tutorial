@@ -6,6 +6,7 @@ export const devopsAdvanced: Lesson[] = [
     title: 'JUnit 与 Testcontainers 容器化测试',
     category: '进阶：DevOps 与工程化', track: 'DevOps & Cloud Native',
     moduleNumber: 8, lessonNumber: 1, language: 'java',
+        illustrationUrl: '/illustrations/devops_deployment.png',
     startingCode: '', targetCode: '',
     instructions: `# 引入 Testcontainers 构建可重现的容器级集成测试
 
@@ -74,6 +75,7 @@ Testcontainers 引擎架构设计的卓绝之处在于启动核心服务时它�
     title: '前端铁桶阵：React Testing Library',
     category: '进阶：DevOps 与工程化', track: 'DevOps & Cloud Native',
     moduleNumber: 8, lessonNumber: 2, language: 'typescript',
+        illustrationUrl: '/illustrations/w3_react_testing_1771635678554.png',
     startingCode: '', targetCode: '',
     instructions: `# React 语义架构下组件端对端行为测试断言
 
@@ -125,6 +127,7 @@ describe('InteractiveLikeButton 交互范式行为集测', () => {
     title: '持续集成 (GitHub Actions) 自动化流',
     category: '进阶：DevOps 与工程化', track: 'DevOps & Cloud Native',
     moduleNumber: 8, lessonNumber: 3, language: 'yaml',
+        illustrationUrl: '/illustrations/devops_deployment.png',
     startingCode: '', targetCode: '',
     instructions: `# 落地 GitHub Actions 持续集成准入自动化门限
 
@@ -183,6 +186,7 @@ GitHub 所派遣的一台名唤 \`ubuntu-latest\` Runner 流水处理环境器�
     title: 'K8s 流量分配：Ingress 路由机制',
     category: '进阶：DevOps 与工程化', track: 'DevOps & Cloud Native',
     moduleNumber: 8, lessonNumber: 4, language: 'yaml',
+        illustrationUrl: '/illustrations/w3_k8s_ingress_1771635714974.png',
     startingCode: '', targetCode: '',
     instructions: `# Ingress 流量边界控制器与内部路由网
 

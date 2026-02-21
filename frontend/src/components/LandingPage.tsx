@@ -4,9 +4,10 @@ import { lessons } from '../data/lessons';
 
 interface LandingPageProps {
     onSelectLesson: (id: string) => void;
+    onOpenAppendix: () => void;
 }
 
-export default function LandingPage({ onSelectLesson }: LandingPageProps) {
+export default function LandingPage({ onSelectLesson, onOpenAppendix }: LandingPageProps) {
     const mermaidRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -76,15 +77,30 @@ export default function LandingPage({ onSelectLesson }: LandingPageProps) {
                                             <div
                                                 key={lesson.id}
                                                 onClick={() => onSelectLesson(lesson.id)}
-                                                className="group relative p-4 rounded-lg border border-gray-200 hover:border-[#4285F4] hover:shadow-md cursor-pointer transition-all bg-white flex flex-col justify-between"
+                                                className="group relative rounded-xl border border-gray-200 hover:border-[#4285F4] hover:shadow-xl hover:-translate-y-1 cursor-pointer transition-all duration-300 bg-white flex flex-col justify-between overflow-hidden"
                                             >
-                                                <div>
-                                                    <div className="flex items-start justify-between mb-2">
-                                                        <span className={`text-xs font-bold px-2 py-1 rounded ${lesson.type === 'frontend' ? 'bg-[#E8F0FE] text-[#1967D2]' : 'bg-[#E6F4EA] text-[#137333]'}`}>
-                                                            {lesson.type === 'frontend' ? '前端' : '后端'}
-                                                        </span>
+                                                {/* Image Header */}
+                                                {lesson.illustrationUrl && (
+                                                    <div className="w-full h-40 overflow-hidden relative bg-gray-100">
+                                                        <img src={lesson.illustrationUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={lesson.title} />
+                                                        <div className="absolute inset-0 bg-linear-to-t from-gray-900/60 via-transparent to-transparent"></div>
+                                                        <div className="absolute top-3 left-3">
+                                                            <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full backdrop-blur-md shadow-sm border border-white/20 ${lesson.type === 'frontend' ? 'bg-blue-500/90 text-white' : 'bg-green-500/90 text-white'}`}>
+                                                                {lesson.type === 'frontend' ? '前端 / Frontend' : '后端 / Backend'}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <h4 className="font-semibold text-gray-800 group-hover:text-[#4285F4] transition-colors line-clamp-2">
+                                                )}
+
+                                                <div className="p-5">
+                                                    {!lesson.illustrationUrl && (
+                                                        <div className="flex items-start justify-between mb-2">
+                                                            <span className={`text-xs font-bold px-2 py-1 rounded ${lesson.type === 'frontend' ? 'bg-[#E8F0FE] text-[#1967D2]' : 'bg-[#E6F4EA] text-[#137333]'}`}>
+                                                                {lesson.type === 'frontend' ? '前端' : '后端'}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <h4 className="font-bold text-gray-800 group-hover:text-[#4285F4] transition-colors line-clamp-2 text-[15px] leading-tight mt-1">
                                                         {lesson.title}
                                                     </h4>
                                                 </div>
@@ -95,6 +111,14 @@ export default function LandingPage({ onSelectLesson }: LandingPageProps) {
                             </div>
                         );
                     })}
+                </div>
+
+                {/* Appendix Button */}
+                <div className="mt-8 text-center pb-20">
+                    <button onClick={onOpenAppendix} className="bg-linear-to-r from-gray-900 to-gray-800 text-white px-8 py-4 rounded-full font-bold shadow-xl shadow-gray-900/20 hover:scale-105 hover:shadow-gray-900/40 transition-all duration-300 flex items-center justify-center gap-3 mx-auto">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                        探索项目全局代码库 (IDE附录)
+                    </button>
                 </div>
             </div>
         </div>

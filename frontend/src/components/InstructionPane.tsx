@@ -24,48 +24,52 @@ export default function InstructionPane({
         <div className="flex flex-col py-0 md:py-6 px-0 md:px-4 min-h-full">
             <div className="max-w-5xl w-full mx-auto bg-white min-h-full md:min-h-0 md:h-auto shadow-sm md:shadow-lg md:shadow-gray-200/50 md:rounded-2xl border-x md:border border-gray-200 overflow-hidden">
                 {/* Header */}
-                <div className="shrink-0 px-10 py-6 border-b border-[#DADCE0] bg-gray-50/50">
-                    <div className="flex items-center gap-4">
-                        <span className={`text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full ${lesson.type === 'frontend'
-                            ? 'bg-[#E8F0FE] text-[#4285F4]'
-                            : 'bg-[#E6F4EA] text-[#34A853]'
-                            }`}>
-                            {lesson.type === 'frontend' ? '前端' : '后端'}
-                        </span>
-                        <h2 className="text-lg font-semibold text-[#202124]">{lesson.title}</h2>
+                <div className="shrink-0 px-8 py-8 md:py-10 bg-white">
+                    <h1 className="text-[38px] leading-[1.2] font-normal text-[#282A35] font-sans pb-4">
+                        {lesson.title}
+                    </h1>
+                    <div className="flex items-center gap-3">
+                        <button className="bg-[#04AA6D] hover:bg-[#059862] text-white px-5 py-2 rounded text-[15px] font-sans transition-colors cursor-pointer">
+                            ❮ Previous
+                        </button>
+                        <button className="bg-[#04AA6D] hover:bg-[#059862] text-white px-5 py-2 rounded text-[15px] font-sans transition-colors cursor-pointer">
+                            Next ❯
+                        </button>
                     </div>
                 </div>
 
                 {/* Content area */}
                 <div className="flex-1 pb-16">
                     {/* Markdown instructions */}
-                    <div className="px-10 py-8 prose max-w-none
-          [&_h1]:text-3xl [&_h1]:font-extrabold [&_h1]:border-b [&_h1]:border-gray-200 [&_h1]:pb-4 [&_h1]:mb-6 [&_h1]:text-gray-900
-          [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:text-gray-800
-          [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:text-gray-800
-          [&_p]:text-base [&_p]:mb-6 [&_p]:leading-relaxed [&_p]:text-gray-700
-          [&_ul]:mb-6 [&_ul]:pl-6 [&_ul]:space-y-3 [&_ul]:list-disc
-          [&_li]:text-base [&_li]:leading-relaxed [&_li]:text-gray-700 [&_li]:marker:text-blue-500
-          [&_strong]:font-semibold [&_strong]:text-gray-900
-          [&_:not(pre)>code]:text-sm [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:bg-blue-50/60 [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:rounded [&_:not(pre)>code]:text-[#1967d2]
+                    <div className="px-8 prose max-w-none
+          [&_h2]:text-[32px] [&_h2]:font-normal [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:text-[#282A35] [&_h2]:border-b [&_h2]:border-[#E5E5E5] [&_h2]:pb-2
+          [&_h3]:text-[24px] [&_h3]:font-normal [&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:text-[#282A35]
+          [&_p]:text-[15px] [&_p]:mb-4 [&_p]:leading-normal [&_p]:text-[#282A35] [&_p]:font-sans
+          [&_ul]:mb-6 [&_ul]:pl-10 [&_ul]:space-y-1 [&_ul]:list-disc
+          [&_li]:text-[15px] [&_li]:leading-normal [&_li]:text-[#282A35] [&_li]:font-sans
+          [&_strong]:font-bold [&_strong]:text-[#282A35]
+          [&_:not(pre)>code]:text-[15px] [&_:not(pre)>code]:text-[#E01E5A] [&_:not(pre)>code]:bg-[#f1f1f1] [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:rounded-sm
           [&_pre_code]:bg-transparent [&_pre_code]:p-0
-          [&_img]:rounded-xl [&_img]:shadow-sm [&_img]:my-10 [&_img]:border [&_img]:border-gray-100 [&_img]:w-full [&_img]:object-cover
-          [&_blockquote]:border-l-4 [&_blockquote]:border-blue-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-700 [&_blockquote]:bg-blue-50/50 [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-6 [&_blockquote]:rounded-r-lg">
+          [&_img]:shadow-md [&_img]:my-8 [&_img]:w-full [&_img]:max-w-3xl [&_img]:object-cover
+          [&_blockquote]:border-l-4 [&_blockquote]:border-[#04AA6D] [&_blockquote]:pl-4 [&_blockquote]:py-1 [&_blockquote]:text-[#282A35] [&_blockquote]:bg-[#E7E9EB] [&_blockquote]:my-5">
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
                                 code({ node, inline, className, children, ...props }: any) {
                                     const match = /language-(\w+)/.exec(className || '');
                                     return !inline && match ? (
-                                        <div className="my-8 rounded-xl overflow-hidden border border-gray-200/80 shadow-sm bg-[#f8f9fa]">
-                                            <SyntaxHighlighter
-                                                {...props}
-                                                children={String(children).replace(/\n$/, '')}
-                                                style={vs}
-                                                language={match[1]}
-                                                PreTag="div"
-                                                customStyle={{ margin: 0, padding: '1.5rem', fontSize: '0.9rem', lineHeight: '1.6', backgroundColor: '#f8f9fa' }}
-                                            />
+                                        <div className="my-6 bg-[#E7E9EB] rounded px-4 py-4 md:px-5 md:py-5 font-sans">
+                                            <h3 className="text-lg font-normal text-[#282A35] mt-0 mb-3">Example</h3>
+                                            <div className="bg-white p-4 border-l-4 border-[#04AA6D] overflow-x-auto">
+                                                <SyntaxHighlighter
+                                                    {...props}
+                                                    children={String(children).replace(/\n$/, '')}
+                                                    style={vs}
+                                                    language={match[1]}
+                                                    PreTag="div"
+                                                    customStyle={{ margin: 0, padding: 0, fontSize: '15px', fontFamily: 'Consolas, "Courier New", monospace', backgroundColor: 'transparent' }}
+                                                />
+                                            </div>
                                         </div>
                                     ) : (
                                         <code {...props} className={className}>
@@ -78,6 +82,19 @@ export default function InstructionPane({
                             {lesson.instructions}
                         </ReactMarkdown>
                     </div>
+
+                    {/* Explanatory Illustration Feature */}
+                    {lesson.illustrationUrl && (
+                        <div className="px-8 pb-10">
+                            <hr className="border-[#E5E5E5] my-6" />
+                            <h2 className="text-[32px] font-normal text-[#282A35] mb-4 font-sans">
+                                Architecture Illustration
+                            </h2>
+                            <div className="bg-[#E7E9EB] p-4 rounded">
+                                <img src={lesson.illustrationUrl} alt="课程说明性插图" className="w-full object-cover bg-white p-2" />
+                            </div>
+                        </div>
+                    )}
 
                     {/* Backend: Mermaid diagram */}
                     {lesson.type === 'backend' && lesson.diagramMarkup && (

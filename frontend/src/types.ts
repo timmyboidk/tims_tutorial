@@ -20,6 +20,8 @@ export interface Lesson {
     instructions: string;
     /** Mermaid diagram markup (backend lessons) */
     diagramMarkup?: string;
+    /** Illustration image for the lesson */
+    illustrationUrl?: string;
     targetCode?: string;
     startingCode?: string;
     language?: string;

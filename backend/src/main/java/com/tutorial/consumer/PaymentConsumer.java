@@ -11,9 +11,10 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 
 /**
- * Kafka consumer that processes payment events asynchronously.
- * Simulates a payment gateway processing delay, then updates
- * the payment status in both MySQL and Redis.
+ * 基于 Kafka 的异步消息消费者（事件驱动模型核心组件）。
+ * 用途：用于承接由其它微服务投递过来的高耗时【支付计算】事件。
+ * 它模拟了第三方支付网关的延迟，经过异步等待和算力消耗后，将支付的最终状态
+ * 录入回传至核心业务数据库 MySQL 以及热缓存 Redis 之中。
  */
 @Component
 public class PaymentConsumer {
@@ -29,8 +30,8 @@ public class PaymentConsumer {
     }
 
     /**
-     * Listens for payment events on the "payment-events" Kafka topic.
-     * Simulates async processing and updates the payment status.
+     * @KafkaListener 注解：使当前方法成为指定 Topic（"payment-events"）的监听通道。
+     * 当生产者在该队列中挂载了哪怕一条支付指令，本消费者就会被立即唤醒并吸取该消息进行计算。
      */
     @KafkaListener(topics = "payment-events", groupId = "codeforge-group")
     public void consumePaymentEvent(String message) {
@@ -41,10 +42,10 @@ public class PaymentConsumer {
             log.info("Processing payment event: id={}, amount={} {}",
                     paymentId, payment.getAmount(), payment.getCurrency());
 
-            // Simulate payment gateway processing delay (1-3 seconds)
+            // 这里手动阻塞线程，模拟真实世界中调用支付宝或微信支付接口所必须等待的公网通讯延迟 (1~3 秒)
             Thread.sleep(1000 + (long) (Math.random() * 2000));
 
-            // Simulate success (90% chance) vs failure (10% chance)
+            // 高级工程化模拟：引入 10% 的失败几率以体现真实网络环境下的支付掉单、余额不足或网络波动异常
             String newStatus;
             if (Math.random() < 0.9) {
                 newStatus = "COMPLETED";
@@ -54,10 +55,10 @@ public class PaymentConsumer {
                 log.warn("Payment failed (simulated): id={}", paymentId);
             }
 
-            // Update status in database
+            // [持久化落盘] 将敲定的最终支付状态 UPDATE 回 MySQL 物理表
             paymentMapper.updateStatus(paymentId, newStatus);
 
-            // Update status in Redis cache
+            // [缓存回写] 将这个凭证放入 Redis 并设置半小时过期，方便前端频繁发起轮询接口查单时瞬间返回（抗压高并发）
             redisTemplate.opsForValue().set(
                     "payment:" + paymentId,
                     newStatus,

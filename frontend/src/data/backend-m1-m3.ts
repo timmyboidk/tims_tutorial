@@ -6,6 +6,7 @@ export const backendM1M3: Lesson[] = [
         title: '课程 1.1：Spring Boot 3.5.9 SaaS 基础设施',
         category: '模块1：核心架构与容器启动', track: '后端工程',
         moduleNumber: 1, lessonNumber: 1, language: 'java',
+        illustrationUrl: '/illustrations/w3_springboot_arch_1771635622918.png',
         startingCode: '',
         instructions: `# Spring Boot 3.5.9 与 IoC 容器底层机制
 
@@ -36,6 +37,7 @@ Spring 容器在启动时，主要经历两个阶段：
         title: '课程 1.2：三层架构与 MyBatis 动态持久化',
         category: '模块1：核心架构与容器启动', track: '后端工程',
         moduleNumber: 1, lessonNumber: 2, language: 'java',
+        illustrationUrl: '/illustrations/backend_microservices.png',
         startingCode: '',
         instructions: `# 经典三层架构与 MyBatis 持久化机制
 
@@ -66,6 +68,7 @@ MyBatis 将这些样板代码高度封装。当 Spring Boot 与 MyBatis 整合�
         title: '课程 2.1：AOP 拦截器与 JWT 无状态认证',
         category: '模块2：安全屏障与无状态扩展', track: '后端工程',
         moduleNumber: 2, lessonNumber: 1, language: 'java',
+        illustrationUrl: '/illustrations/w3_jwt_auth_1771635695409.png',
         startingCode: '',
         instructions: `# AOP 拦截器机制与 JWT 无状态认证架构
 
@@ -99,6 +102,7 @@ Interceptor 属于 AOP 设计思想的体现。AOP 的核心在于横切关注�
         title: '课程 2.2：Redis 高频热点缓存层',
         category: '模块2：安全屏障与无状态扩展', track: '后端工程',
         moduleNumber: 2, lessonNumber: 2, language: 'java',
+        illustrationUrl: '/illustrations/w3_redis_cache_1771635654039.png',
         startingCode: '',
         instructions: `# Redis 缓存体系与 LRU 淘汰机制
 
@@ -131,6 +135,7 @@ Interceptor 属于 AOP 设计思想的体现。AOP 的核心在于横切关注�
         title: '课程 3.1：Kafka 事件驱动与解耦',
         category: '模块3：事件驱动与异步通信', track: '后端工程',
         moduleNumber: 3, lessonNumber: 3, language: 'java',
+        illustrationUrl: '/illustrations/w3_kafka_events_1771635638993.png',
         startingCode: '',
         instructions: `# Kafka 事件驱动架构的高并发解耦
 

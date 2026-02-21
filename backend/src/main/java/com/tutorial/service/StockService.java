@@ -11,8 +11,9 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * Stock management service with Redis caching layer.
- * Caches individual stock lookups for 5 minutes to reduce DB load.
+ * 具有高性能 Redis 缓存保护层的商品/库存服务 (Stock Management)。
+ * 核心优势：对于 C 端的频繁查询请求，将会把数据缓存至 Redis 内存中（TTL 为 5 分钟），
+ * 藉此抵挡大流量直击底层 MySQL 数据库，也就是常说的“读写分离及缓存抗压”。
  */
 @Service
 public class StockService {
@@ -49,7 +50,7 @@ public class StockService {
 
     public Stock update(Stock stock) {
         stockMapper.update(stock);
-        // Invalidate cache on update
+        // 【双写一致性保障】发生更新事件时，必须主动销毁 Redis 中残留的旧缓存 (Invalidate)，强制下次查询走数据库
         redisTemplate.delete(CACHE_PREFIX + stock.getId());
         log.info("Updated stock: id={}, symbol={}", stock.getId(), stock.getSymbol());
         return stock;
@@ -57,7 +58,7 @@ public class StockService {
 
     public void delete(Long id) {
         stockMapper.deleteById(id);
-        // Invalidate cache on delete
+        // 【缓存双删/淘汰】物理删除记录后，连同缓存池中的残留一并抹除
         redisTemplate.delete(CACHE_PREFIX + id);
         log.info("Deleted stock: id={}", id);
     }

@@ -3,13 +3,14 @@ import Header from './components/Header';
 import LessonSidebar from './components/LessonSidebar';
 import InstructionPane from './components/InstructionPane';
 import LandingPage from './components/LandingPage';
+import AppendixIDE from './components/AppendixIDE';
 import { lessons } from './data/lessons';/* ================================================================
  * App — Root component composing the split-pane layout:
  *   Sidebar | InstructionPane | GhostEditor
  * ================================================================ */
 
 export default function App() {
-    const [currentView, setCurrentView] = useState<'landing' | 'ide'>('landing');
+    const [currentView, setCurrentView] = useState<'landing' | 'ide' | 'appendix'>('landing');
     const [activeLessonId, setActiveLessonId] = useState(lessons[0].id);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -44,12 +45,15 @@ export default function App() {
                         </div>
                     </div>
                 </>
+            ) : currentView === 'appendix' ? (
+                <AppendixIDE onBack={() => setCurrentView('landing')} />
             ) : (
                 <LandingPage
                     onSelectLesson={(id: string) => {
                         setActiveLessonId(id);
                         setCurrentView('ide');
                     }}
+                    onOpenAppendix={() => setCurrentView('appendix')}
                 />
             )}
         </div>

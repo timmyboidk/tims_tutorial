@@ -10,8 +10,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Authentication service handling user registration and login.
- * Passwords are hashed with BCrypt; successful login returns a JWT token.
+ * 核心认证服务层 (Service)，专门用于处理用户的注册和登录业务逻辑。
+ * 安全规范：绝不明文存储密码，这里使用 Spring Security 的 BCrypt 算法进行不可逆哈希加密；
+ * 状态管理：抛弃传统的 Session 方案，登录成功后直接向客户端签发无状态的 JWT 令牌。
  */
 @Service
 public class AuthService {
@@ -32,11 +33,11 @@ public class AuthService {
      * @throws IllegalArgumentException if username or email already exists
      */
     public Map<String, Object> register(String username, String email, String password) {
-        // Check for existing username
+        // 【第一步】防御性校验：检查数据库中是否已存在被注册的用户名（保持数据唯一性）
         if (userMapper.findByUsername(username) != null) {
             throw new IllegalArgumentException("Username already exists");
         }
-        // Check for existing email
+        // 【第二步】校验防重：确保该邮箱尚未与系统内的其它账号绑定
         if (userMapper.findByEmail(email) != null) {
             throw new IllegalArgumentException("Email already exists");
         }

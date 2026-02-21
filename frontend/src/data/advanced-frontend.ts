@@ -6,6 +6,7 @@ export const advancedFrontend: Lesson[] = [
     title: 'Zustand 企业级状态管理',
     category: '进阶：高级前端架构', track: '前端架构',
     moduleNumber: 6, lessonNumber: 1, language: 'typescript',
+        illustrationUrl: '/illustrations/w3_react_hooks_flow_1771635574572.png',
     startingCode: '', targetCode: '',
     instructions: `# 引入 Zustand 替代 Context API
 
@@ -60,6 +61,7 @@ export function SidebarToggle() {
     title: 'React 终极性能优化',
     category: '进阶：高级前端架构', track: '前端架构',
     moduleNumber: 6, lessonNumber: 2, language: 'typescript',
+        illustrationUrl: '/illustrations/w3_react_optimizations_1771635739563.png',
     startingCode: '', targetCode: '',
     instructions: `# React 性能防卫：useMemo 与闭包引用击穿
 
@@ -127,6 +129,7 @@ export default function FilterView() {
     title: 'Next.js：SSG 静态站点生成',
     category: '进阶：高级前端架构', track: '前端架构',
     moduleNumber: 6, lessonNumber: 3, language: 'typescript',
+        illustrationUrl: '/illustrations/w3_nextjs_ssr_arch_1771635590252.png',
     startingCode: '', targetCode: '',
     instructions: `# SSG 预置数据静态生成架构体系
 
@@ -176,6 +179,7 @@ export default async function HelpCenterPage() {
     title: '全双工战线：WebSockets 实时推送',
     category: '进阶：高级前端架构', track: '前端架构',
     moduleNumber: 6, lessonNumber: 4, language: 'typescript',
+        illustrationUrl: '/illustrations/frontend_architecture.png',
     startingCode: '', targetCode: '',
     instructions: `# WebSocket 双全工长连接通道架构
 
