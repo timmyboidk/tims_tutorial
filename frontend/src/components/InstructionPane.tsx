@@ -74,7 +74,7 @@ export default function InstructionPane({
                                                     style={vs}
                                                     language={match[1]}
                                                     PreTag="div"
-                                                    customStyle={{ margin: 0, padding: 0, fontSize: '18px', fontFamily: '"JetBrains Mono", monospace', fontWeight: 'normal', lineHeight: '1.6', backgroundColor: 'transparent' }}
+                                                    customStyle={{ margin: 0, padding: 0, fontSize: '16px', fontFamily: '"JetBrains Mono", monospace', fontWeight: 'normal', lineHeight: '2.0', backgroundColor: 'transparent' }}
                                                 />
                                             </div>
                                         </div>
